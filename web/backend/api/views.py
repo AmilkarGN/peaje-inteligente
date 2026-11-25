@@ -813,8 +813,15 @@ def tarifas_casetas_usuarios_view(request):
 def estado_inferencia_view(request):
     """
     Página 'Estado: indica si el endpoint de inferencia responde' (Sección 4.2).
-    Realiza un ping en vivo a INFERENCE_URL/health y reporta latencia, GPU y disponibilidad de M1, M2, M3 y M4.
+    También permite actualizar INFERENCE_URL en caliente (POST) cuando cambia el túnel de Colab o RunPod.
     """
+    if request.method == "POST":
+        body = _parse_json_body(request)
+        nueva_url = (body.get("inference_url") or "").strip().rstrip("/")
+        if nueva_url.startswith("http://") or nueva_url.startswith("https://"):
+            settings.INFERENCE_URL = nueva_url
+            os.environ["INFERENCE_URL"] = nueva_url
+
     url_base = settings.INFERENCE_URL
     t0 = time.perf_counter()
     remoto_ok = False
