@@ -21,13 +21,34 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.24.3'
           channel: 'stable'
 
-      - name: Create Flutter Android shell if missing and build release APK
+      - name: Generate complete Android Gradle project and build Release APK
         working-directory: ./movil
         run: |
-          flutter create --platforms=android --org bo.edu.unifranz.iam811 .
+          cp -r lib /tmp/lib_peaje_backup
+          cp pubspec.yaml /tmp/pubspec_peaje_backup.yaml
+          rm -rf android test
+          flutter create --platforms=android --project-name peaje_movil_iam811 --org bo.edu.unifranz.iam811 .
+          rm -rf lib test
+          cp -r /tmp/lib_peaje_backup lib
+          cp /tmp/pubspec_peaje_backup.yaml pubspec.yaml
+          python3 -c '
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          txt = manifest.read_text()
+          perms = "<uses-permission android:name=\"android.permission.INTERNET\" />\n    <uses-permission android:name=\"android.permission.CAMERA\" />\n    "
+          if "android.permission.CAMERA" not in txt:
+              txt = txt.replace("<application", perms + "<application", 1)
+          txt = txt.replace("android:label=\"peaje_movil_iam811\"", "android:label=\"Peaje IAM-811\"")
+          manifest.write_text(txt)
+          for gradle_path in [Path("android/app/build.gradle"), Path("android/app/build.gradle.kts")]:
+              if gradle_path.exists():
+                  g = gradle_path.read_text()
+                  g = g.replace("flutter.minSdkVersion", "21")
+                  gradle_path.write_text(g)
+          '
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
