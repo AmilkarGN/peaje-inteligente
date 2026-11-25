@@ -45,6 +45,7 @@ from .realtime import (
 
 # Importación diferida del motor local de inferencia (solo si INFERENCE_URL apunta al mismo contenedor cloud)
 _INFERENCIA_DIRECTA = None
+_ERROR_IMPORT_MOTOR = ""
 
 
 def _cargar_motor_inferencia_integrado():
