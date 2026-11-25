@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://peaje.tudominio.com",
+      "url": "https://peaje-inteligente.onrender.com",
       "description": "Servidor de Producción en Subdominio HTTPS"
     }
   ],

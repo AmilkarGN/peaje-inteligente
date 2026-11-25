@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 /// Autor: Amilkar Hugo Guarachi Nina
 class PeajeApiService {
   /// URL del subdominio en producción (configurable desde la pantalla de inicio de la app)
-  String baseUrl = 'https://peaje.tudominio.com';
+  String baseUrl = 'https://peaje-inteligente.onrender.com';
   String? sessionToken;
   Map<String, dynamic>? usuarioActual;
 

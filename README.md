@@ -136,8 +136,8 @@ El APK instalable se genera en `movil/build/app/outputs/flutter-apk/app-release.
 
 ## 6. Enlaces Oficiales del Proyecto
 
-- **Aplicación Web en Producción (Subdominio HTTPS):** *(Se actualizará al publicar el subdominio)*
-- **Documentación Interactiva Swagger / OpenAPI:** `/api/docs` ([docs/openapi_swagger.json](docs/openapi_swagger.json))
+- **Aplicación Web en Producción (Subdominio HTTPS):** https://peaje-inteligente.onrender.com
+- **Documentación Interactiva Swagger / OpenAPI:** https://peaje-inteligente.onrender.com/api/docs ([docs/openapi_swagger.json](docs/openapi_swagger.json))
 - **Endpoint Unificado de Inferencia (`INFERENCE_URL`):** `https://glad-blocked-cod-colon.trycloudflare.com`
 - **Dataset M2 (Segmentación de Instancias de Vehículos en Roboflow):** https://app.roboflow.com/amilkars-workspace/peaje-vehiculos-seg-ordkq/1 (Universe: https://universe.roboflow.com/amilkars-workspace/peaje-vehiculos-seg-ordkq)
 - **Dataset M3 (Keypoints de Ruedas / Llantas en Roboflow):** https://app.roboflow.com/amilkars-workspace/peaje-ruedas-keypoints/1 (Imágenes: https://app.roboflow.com/amilkars-workspace/peaje-ruedas-keypoints/1/images)

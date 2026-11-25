@@ -50,7 +50,7 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
   final PeajeApiService _api = PeajeApiService();
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
   final TextEditingController _urlCtrl =
-      TextEditingController(text: 'https://peaje.tudominio.com');
+      TextEditingController(text: 'https://peaje-inteligente.onrender.com');
   final TextEditingController _consultaTextoCtrl = TextEditingController();
 
   int _tabIndex = 0; // 0 = Modo Caseta, 1 = Modo Consulta
