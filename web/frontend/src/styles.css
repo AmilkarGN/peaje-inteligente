@@ -1,10 +1,10 @@
 :root {
-  --bg-dark: #0b1120;
-  --bg-card: #111827;
-  --accent: #3b82f6;
-  --emerald: #10b981;
-  --amber: #f59e0b;
-  --rose: #f43f5e;
+  --bg-light: #f8fafc;
+  --bg-card: #ffffff;
+  --accent: #2563eb;
+  --emerald: #059669;
+  --amber: #d97706;
+  --rose: #dc2626;
 }
 
 * {
@@ -15,6 +15,6 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-dark);
-  color: #f1f5f9;
+  background-color: var(--bg-light);
+  color: #0f172a;
 }

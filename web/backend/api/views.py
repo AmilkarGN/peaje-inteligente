@@ -526,7 +526,7 @@ def consultar_placa_imagen_view(request):
                 "recorte_placa_b64": res_ocr.get("recorte_placa_b64"),
                 "imagen_evidencia_b64": res_ocr.get("imagen_evidencia_b64"),
                 "respuesta_agente": (
-                    "⚠️ No se detectó una placa legible en la imagen enviada. "
+                    "No se detectó una placa legible en la imagen enviada. "
                     "Por favor, tome o suba otra imagen donde la placa del vehículo se vea con mayor claridad e iluminación."
                 ),
             }
@@ -542,7 +542,7 @@ def consultar_placa_imagen_view(request):
     datos_bd["recorte_placa_b64"] = res_ocr.get("recorte_placa_b64")
     datos_bd["imagen_evidencia_b64"] = res_ocr.get("imagen_evidencia_b64")
     datos_bd["respuesta_agente"] = (
-        f"📸 **Placa leída por visión artificial (M1 + OCR):** `{placa_detectada}` "
+        f"**Placa leída por visión artificial (M1 + OCR):** `{placa_detectada}` "
         f"(Confianza OCR: {conf_ocr * 100:.1f}%).\n\n"
         + enriquecer_con_llm_gemini(f"Imagen con placa leída {placa_detectada}", datos_bd)
     )

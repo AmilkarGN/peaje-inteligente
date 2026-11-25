@@ -268,7 +268,7 @@ def consultar_estado_placa_bd(placa_entrada: str) -> Dict[str, Any]:
         cat_str = ultimo_paso.get("categoria_detectada", "auto").upper()
         monto_val = ultimo_paso.get("monto", 0.0)
         respuesta = (
-            f"Estado: **Identificada no registrada** ⚠️ *(Posible evasión)*.\n"
+            f"Estado: **Identificada no registrada** (Posible evasión).\n"
             f"• **Placa normalizada:** `{placa_norm}`.\n"
             f"• La cámara la detectó **{total_pasos} vez/veces**, pero **no está registrada** en el padrón de vehículos.\n"
             f"• **Última detección:** Fecha `{fecha_str}` en **{caseta_str}** | Categoría detectada: **{cat_str}** "
@@ -288,7 +288,7 @@ def consultar_estado_placa_bd(placa_entrada: str) -> Dict[str, Any]:
             f"`{s['placa']}` ({s['motivo']})"
             for s in sugerencias
         ]
-        respuesta += f"\n\n💡 **¿Quisiste decir…?** Detectamos coincidencias cercanas por posible confusión de OCR: {', '.join(textos_sug)}."
+        respuesta += f"\n\n**¿Quisiste decir…?** Detectamos coincidencias cercanas por posible confusión de OCR: {', '.join(textos_sug)}."
 
     return {
         "ok": True,
