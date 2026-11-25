@@ -57,7 +57,8 @@ def _cargar_motor_inferencia_integrado():
             sys.path.insert(0, str(ruta_inf))
         import main as motor_inf  # type: ignore
         _INFERENCIA_DIRECTA = motor_inf
-    except Exception:
+    except Exception as exc_imp:
+        print(f'[motor-integrado] fallo import: {exc_imp!r}')
         _INFERENCIA_DIRECTA = False
     return _INFERENCIA_DIRECTA
 
