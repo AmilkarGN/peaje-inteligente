@@ -1,0 +1,38 @@
+# Nunca subir secretos, tokens ni archivos .env (Penalización -10 pts sección 11)
+.env
+*.env
+!.env.example
+client_secret*.json
+
+# Archivos zip temporales pesados y carpetas de datasets crudos
+*.zip
+minibuses-la-paz*/
+entrenamiento/datasets_listos_roboflow/
+notebooks_h4/
+placas-web_v2/
+inferencia/.ultralytics/
+/m2_vehiculos_seg.pt
+/keypoints_llantas_yolo_detectron2_v3.ipynb
+/segmentacion_vehiculos_yolo_detectron2_simplificado*.ipynb
+
+# Python / Django / FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+venv/
+.venv/
+env/
+staticfiles/
+media/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Flutter
+movil/build/
+movil/.dart_tool/
+movil/.flutter-plugins
+movil/.flutter-plugins-dependencies

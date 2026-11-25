@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "IAM-811 Sistema Inteligente de Control de Peaje - API REST",
+    "description": "Colección oficial de Postman para el Laboratorio Final de Hito (IAM-811). Autor: Amilkar Hugo Guarachi Nina.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "https://peaje.tudominio.com" },
+    { "key": "TOKEN", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. POST /api/v1/auth/google (Autenticación Google OAuth 2.0 + Lista Blanca)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{BASE_URL}}/api/v1/auth/google",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"google_id_token_aqui\",\n  \"email_google\": \"doc.alvaro.pinto.ma@unifranz.edu.bo\"\n}"
+        }
+      }
+    },
+    {
+      "name": "2. POST /api/v1/pasos/frame (Registrar Paso desde Caseta + Inferencia M1+M2+M3+M4)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{BASE_URL}}/api/v1/pasos/frame",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"caseta_id\": 1,\n  \"imagen_base64\": \"data:image/jpeg;base64,...\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3. POST /api/v1/placas/consultar (Consulta de Placa por Texto - 4 Estados)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{BASE_URL}}/api/v1/placas/consultar",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"placa\": \"29B110559\"\n}"
+        }
+      }
+    },
+    {
+      "name": "4. POST /api/v1/placas/consultar-imagen (Consulta de Placa por Imagen M1 + OCR)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{BASE_URL}}/api/v1/placas/consultar-imagen",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"imagen_base64\": \"data:image/jpeg;base64,...\"\n}"
+        }
+      }
+    },
+    {
+      "name": "5. GET /api/v1/placas/{placa}/historial (Historial de Pasos de una Placa)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+        "url": "{{BASE_URL}}/api/v1/placas/29B110559/historial"
+      }
+    },
+    {
+      "name": "6. GET /api/v1/casetas/{id}/resumen (Conteo y Recaudación del Día)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+        "url": "{{BASE_URL}}/api/v1/casetas/1/resumen"
+      }
+    },
+    {
+      "name": "7. POST /api/v1/agente/chat (Mensaje al Agente Conversacional)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{BASE_URL}}/api/v1/agente/chat",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mensaje\": \"¿Cuál es el estado de la placa 298110559?\"\n}"
+        }
+      }
+    },
+    {
+      "name": "8. GET /api/v1/estado-inferencia (Verificar Endpoint RunPod / Colab)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+        "url": "{{BASE_URL}}/api/v1/estado-inferencia"
+      }
+    },
+    {
+      "name": "9. GET /api/v1/hardware/estado (Estado Cloud para Arduino Uno/Nano/Mega)",
+      "request": {
+        "method": "GET",
+        "url": "{{BASE_URL}}/api/v1/hardware/estado"
+      }
+    }
+  ]
+}

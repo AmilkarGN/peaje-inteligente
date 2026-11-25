@@ -1,0 +1,38 @@
+name: Build Flutter APK (Peaje Inteligente IAM-811)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Create Flutter Android shell if missing and build release APK
+        working-directory: ./movil
+        run: |
+          flutter create --platforms=android --org bo.edu.unifranz.iam811 .
+          flutter pub get
+          flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peaje-iam811-release-apk
+          path: movil/build/app/outputs/flutter-apk/app-release.apk

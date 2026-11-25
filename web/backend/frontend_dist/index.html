@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IAM-811 · Sistema Inteligente de Control de Peaje</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #070b14; color: #f1f5f9; }
+    .led-glow-green { box-shadow: 0 0 18px 4px rgba(16, 185, 129, 0.75); }
+    .led-glow-amber { box-shadow: 0 0 18px 4px rgba(245, 158, 11, 0.75); }
+    .led-glow-red { box-shadow: 0 0 20px 5px rgba(244, 63, 94, 0.85); animation: pulseRed 0.9s infinite; }
+    @keyframes pulseRed { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: 0.7; } }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+
+  <!-- PANTALLA DE LOGIN CON GOOGLE OAUTH 2.0 Y LISTA BLANCA -->
+  <div id="login-view" class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-lg w-full bg-slate-900/95 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <span class="px-3.5 py-1 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+          IAM-811 · Machine Learning y Aprendizaje Profundo
+        </span>
+        <h1 class="text-2xl font-bold text-white mt-4">Sistema Inteligente de Control de Peaje</h1>
+        <p class="text-slate-400 text-sm mt-1">
+          Autor: <strong class="text-slate-200">Amilkar Hugo Guarachi Nina</strong> · Docente: <strong class="text-slate-200">Ing. Alvaro Pinto Mamani</strong>
+        </p>
+        <p class="text-xs text-slate-500 mt-1">Acceso exclusivo mediante Google OAuth 2.0 (Lista Blanca Activa)</p>
+      </div>
+
+      <!-- Mensaje de error 403 cuando una cuenta no está en la lista blanca -->
+      <div id="login-error" class="hidden mb-5 p-4 rounded-2xl bg-rose-950/80 border border-rose-500/60 text-rose-200 text-sm">
+        <div class="flex items-center gap-2 font-bold text-rose-300">
+          <span>⛔</span> <span>ACCESO DENEGADO (HTTP 403 - LISTA BLANCA)</span>
+        </div>
+        <p id="login-error-text" class="mt-1 text-xs leading-relaxed"></p>
+      </div>
+
+      <!-- Botón oficial de Google Identity Services si GOOGLE_CLIENT_ID está configurado -->
+      <div id="g_id_onload_container" class="flex justify-center mb-4"></div>
+
+      <div class="space-y-2.5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          Cuentas Google OAuth 2.0 en Lista Blanca (Demostración y Revisión):
+        </p>
+
+        <button onclick="loginGoogleEmail('doc.alvaro.pinto.ma@unifranz.edu.bo')"
+          class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm flex items-center justify-between transition shadow-lg shadow-blue-600/20">
+          <span class="flex items-center gap-2.5">🎓 <span>doc.alvaro.pinto.ma@unifranz.edu.bo</span></span>
+          <span class="px-2 py-0.5 rounded bg-blue-900/60 text-xs">ADMINISTRADOR</span>
+        </button>
+
+        <button onclick="loginGoogleEmail('guamilkar@gmail.com')"
+          class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm flex items-center justify-between transition">
+          <span class="flex items-center gap-2.5">🔐 <span>guamilkar@gmail.com (Amilkar Guarachi)</span></span>
+          <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-xs">ADMINISTRADOR</span>
+        </button>
+
+        <button onclick="loginGoogleEmail('operador.peaje@unifranz.edu.bo')"
+          class="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm flex items-center justify-between transition">
+          <span class="flex items-center gap-2.5">👮 <span>operador.peaje@unifranz.edu.bo</span></span>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs">OPERADOR</span>
+        </button>
+
+        <button onclick="loginGoogleEmail('usuario.no.autorizado@gmail.com')"
+          class="w-full py-2.5 px-4 rounded-xl bg-rose-950/50 hover:bg-rose-900/60 border border-rose-700/50 text-rose-300 font-medium text-sm flex items-center justify-between transition">
+          <span class="flex items-center gap-2.5">🚫 <span>usuario.no.autorizado@gmail.com</span></span>
+          <span class="px-2 py-0.5 rounded bg-rose-900/80 text-rose-200 text-xs">PROBAR RECHAZO 403</span>
+        </button>
+      </div>
+
+      <div class="mt-5 pt-4 border-t border-slate-800 flex gap-2">
+        <input id="custom-google-email" type="email" placeholder="O ingrese cualquier correo Google OAuth..."
+          class="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500" />
+        <button onclick="loginGoogleEmail(document.getElementById('custom-google-email').value)"
+          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold text-white">
+          Validar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APLICACIÓN PRINCIPAL (6 PÁGINAS MÍNIMAS OBLIGATORIAS + HARDWARE ARDUINO) -->
+  <div id="app-view" class="hidden min-h-screen flex flex-col">
+    <!-- Barra Superior -->
+    <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-xl">
+          🛣️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-white text-base">Control Inteligente de Peaje · IAM-811</h1>
+            <span id="rt-badge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              ● TIEMPO REAL ACTIVO
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Google Auth: <strong id="user-email" class="text-blue-400"></strong> ·
+            Rol: <span id="user-role" class="uppercase px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-semibold"></span> ·
+            <a href="/api/docs" target="_blank" class="text-cyan-400 underline hover:text-cyan-300">Swagger OpenAPI</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Navegación de las 6 páginas obligatorias (Sección 4.2) -->
+      <nav class="flex flex-wrap items-center gap-1.5">
+        <button onclick="showTab('panel')" id="tab-btn-panel" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white">
+          ⚡ 1. Panel Tiempo Real
+        </button>
+        <button onclick="showTab('vehiculos')" id="tab-btn-vehiculos" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          🚗 2. Vehículos (CRUD)
+        </button>
+        <button onclick="showTab('pasos')" id="tab-btn-pasos" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          📸 3. Pasos e Imágenes
+        </button>
+        <button onclick="showTab('alertas')" id="tab-btn-alertas" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          🚨 4. Alertas <span id="nav-alert-count" class="ml-1 px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px]">0</span>
+        </button>
+        <button onclick="showTab('chat')" id="tab-btn-chat" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          🤖 5. Chat Agente IA
+        </button>
+        <button onclick="showTab('estado')" id="tab-btn-estado" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          ☁️ 6. Estado Inferencia
+        </button>
+        <button onclick="logout()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-rose-950/80 border border-rose-700/40 text-rose-300 hover:bg-rose-900">
+          Salir
+        </button>
+      </nav>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-6 flex-1 space-y-6">
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 1: PANEL EN TIEMPO REAL (PASOS, RECAUDACIÓN, ALERTAS, PASAJEROS Y HARDWARE ARDUINO) -->
+      <!-- ========================================================= -->
+      <section id="tab-panel" class="space-y-6">
+        <!-- Contadores KPI en tiempo real -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-semibold uppercase text-slate-400">Pasos Registrados</span>
+              <span class="text-lg">🚘</span>
+            </div>
+            <p id="kpi-pasos" class="text-3xl font-bold text-white mt-2">0</p>
+            <p class="text-xs text-slate-400 mt-1">Actualización instantánea sin recargar</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-semibold uppercase text-slate-400">Recaudación Total</span>
+              <span class="text-lg">💰</span>
+            </div>
+            <p id="kpi-recaudacion" class="text-3xl font-bold text-emerald-400 mt-2">Bs 0.00</p>
+            <p class="text-xs text-slate-400 mt-1">Calculada por categoría (M2) y ejes (M3)</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-semibold uppercase text-cyan-400">Pasajeros Segmentados (+5 pts)</span>
+              <span class="text-lg">👥</span>
+            </div>
+            <p id="kpi-pasajeros" class="text-3xl font-bold text-cyan-400 mt-2">0</p>
+            <p class="text-xs text-slate-400 mt-1">Conteo por máscara anónima (sin rostros)</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-semibold uppercase text-rose-400">Alertas Activas</span>
+              <span class="text-lg">🚨</span>
+            </div>
+            <p id="kpi-alertas" class="text-3xl font-bold text-rose-400 mt-2">0</p>
+            <p class="text-xs text-slate-400 mt-1">Placas no registradas o sin saldo</p>
+          </div>
+        </div>
+
+        <!-- Bono +5 pts: Monitor en Vivo del Dispositivo de Hardware Arduino + Captura de Caseta -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Dispositivo Físico Arduino Uno/Nano/Mega en Tiempo Real -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">
+                  🔌 Bono +5 pts: Dispositivo Hardware Arduino
+                </span>
+                <span id="hw-fase-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-200">
+                  LISTO
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mb-4">
+                Sincronizado con <code class="text-cyan-300">/api/v1/hardware/estado</code> para encender LEDs y Buzzer en Arduino Uno/Nano/Mega:
+              </p>
+
+              <!-- LEDs Físicos Representados -->
+              <div class="grid grid-cols-4 gap-3 text-center my-4">
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                  <div id="led-verde" class="w-6 h-6 rounded-full mx-auto bg-emerald-950 border border-emerald-700"></div>
+                  <p class="text-[11px] font-semibold mt-2 text-slate-300">LED Verde</p>
+                  <p class="text-[10px] text-slate-500">Pin D10 · Paso OK</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                  <div id="led-amarillo" class="w-6 h-6 rounded-full mx-auto bg-amber-950 border border-amber-700"></div>
+                  <p class="text-[11px] font-semibold mt-2 text-slate-300">LED Amarillo</p>
+                  <p class="text-[10px] text-slate-500">Pin D9 · Inferencia</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                  <div id="led-rojo" class="w-6 h-6 rounded-full mx-auto bg-rose-950 border border-rose-700"></div>
+                  <p class="text-[11px] font-semibold mt-2 text-slate-300">LED Rojo</p>
+                  <p class="text-[10px] text-slate-500">Pin D8 · Alerta</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                  <div id="led-buzzer" class="w-6 h-6 rounded-full mx-auto bg-slate-800 border border-slate-700 flex items-center justify-center text-xs">🔈</div>
+                  <p class="text-[11px] font-semibold mt-2 text-slate-300">Buzzer</p>
+                  <p class="text-[10px] text-slate-500">Pin D7 · Alarma</p>
+                </div>
+              </div>
+
+              <!-- Pantalla LCD 16x2 del Arduino -->
+              <div class="p-3 rounded-xl bg-emerald-950/70 border-2 border-emerald-700/60 font-mono text-xs text-emerald-300">
+                <div class="text-[10px] text-emerald-500 uppercase">LCD 16x2 I2C Arduino:</div>
+                <div id="hw-lcd-line" class="text-sm font-bold tracking-wider mt-0.5">PEAJE IAM-811 LISTO</div>
+                <div id="hw-serial-cmd" class="text-[10px] text-emerald-400/80 truncate mt-1">CMD:0|FASE:LISTO</div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex gap-2">
+              <button onclick="dispararPruebaHardware('PASO_OK')" class="flex-1 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold hover:bg-emerald-600/30">
+                Probar Paso OK
+              </button>
+              <button onclick="dispararPruebaHardware('ALERTA_NO_REGISTRADA')" class="flex-1 py-2 rounded-xl bg-rose-600/20 border border-rose-500/40 text-rose-300 text-xs font-semibold hover:bg-rose-600/30">
+                Probar Alarma Arduino
+              </button>
+            </div>
+          </div>
+
+          <!-- Simulador de Caseta / Envío de Frame en Vivo a POST /api/v1/pasos/frame -->
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h2 class="text-sm font-bold text-white">📹 Captura de Caseta en Vivo (`POST /api/v1/pasos/frame`)</h2>
+                <p class="text-xs text-slate-400">
+                  Recibe video/frames de la App Móvil Flutter o de las 20 imágenes del hito, ejecuta M1+M2+M3+M4 en la nube y actualiza este panel al instante.
+                </p>
+              </div>
+              <select id="caseta-select" class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white">
+                <option value="1">Caseta Central #1 - Autopista</option>
+                <option value="2">Caseta Achica Arriba #2</option>
+                <option value="3">Caseta Urujara #3</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-3">
+                <!-- CONTROLES DE VIDEO EN TIEMPO REAL (CÁMARA EN VIVO O ARCHIVO DE VIDEO .MP4 A 2-5 FPS) -->
+                <div class="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-blue-300">🎥 Video en Tiempo Real (Modo Caseta 2-5 FPS)</span>
+                    <select id="video-fps-select" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[11px] text-white">
+                      <option value="2">2 FPS (Cada 500 ms)</option>
+                      <option value="3">3 FPS (Cada 333 ms)</option>
+                      <option value="4">4 FPS (Cada 250 ms)</option>
+                      <option value="5">5 FPS (Cada 200 ms)</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <button onclick="toggleCamaraEnVivo()" id="btn-camara-vivo"
+                      class="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
+                      📹 Iniciar Cámara en Vivo
+                    </button>
+                    <label class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold text-center cursor-pointer">
+                      🎞️ Cargar Video (.mp4)
+                      <input type="file" accept="video/*" class="hidden" onchange="cargarVideoArchivoEnVivo(event)" />
+                    </label>
+                    <button onclick="detenerStreamVideo()" id="btn-detener-video"
+                      class="hidden py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">
+                      ⏹ Detener
+                    </button>
+                  </div>
+                  <video id="caseta-video-player" class="hidden w-full max-h-40 rounded-lg bg-black" muted playsinline controls></video>
+                  <canvas id="caseta-video-canvas" class="hidden"></canvas>
+                </div>
+
+                <div>
+                  <label class="text-xs text-slate-400 block mb-1">O probar con una de las 20 imágenes del Hito (01.jpg - 20.jpg) / archivo:</label>
+                  <div class="flex gap-2">
+                    <select id="preset-img-select" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"></select>
+                    <button onclick="procesarImagenPresetCaseta()" id="btn-procesar-preset"
+                      class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold">
+                      🚀 Probar 1 Frame
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <input type="file" id="caseta-file-input" accept="image/*" onchange="procesarArchivoCaseta(event)"
+                    class="w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-slate-800 file:text-white hover:file:bg-slate-700" />
+                </div>
+
+                <div id="caseta-resultado-box" class="hidden p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1"></div>
+              </div>
+
+              <div class="flex flex-col items-center justify-center bg-slate-950 border border-slate-800 rounded-xl p-3 min-h-[190px]">
+                <img id="caseta-preview-img" class="max-h-48 rounded-lg object-contain hidden" alt="Evidencia de inferencia" />
+                <p id="caseta-preview-placeholder" class="text-xs text-slate-500 text-center">
+                  La imagen anotada con M1 (Placa + OCR), M2 (Máscara de Vehículo), M3 (Keypoints de Ejes) y M4 (Máscara de Pasajeros) aparecerá aquí en tiempo real.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Últimos Vehículos Registrados en Tiempo Real + Alertas Recientes -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <h2 class="text-sm font-bold text-white mb-3">⚡ Flujo de Pasos de Vehículos en Tiempo Real</h2>
+            <div id="realtime-pasos-feed" class="space-y-3"></div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <h2 class="text-sm font-bold text-rose-400 mb-3">🚨 Alertas en Tiempo Real</h2>
+            <div id="realtime-alertas-feed" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 2: VEHÍCULOS (CRUD COMPLETO + GESTIÓN DE LISTA BLANCA Y TARIFAS) -->
+      <!-- ========================================================= -->
+      <section id="tab-vehiculos" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Formulario Crear / Editar Vehículo -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+            <h2 class="text-sm font-bold text-white" id="form-veh-title">➕ Registrar Vehículo en Padrón</h2>
+            <input type="hidden" id="veh-id" />
+            <div>
+              <label class="text-xs text-slate-400">Placa (se normaliza automáticamente)</label>
+              <input id="veh-placa" type="text" placeholder="Ej. 29B110559 o 4521TKB"
+                class="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white uppercase" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-400">Propietario</label>
+              <input id="veh-propietario" type="text" placeholder="Nombre completo o empresa"
+                class="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-400">Categoría (M2)</label>
+                <select id="veh-categoria" class="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white">
+                  <option value="moto">Moto</option>
+                  <option value="auto" selected>Auto</option>
+                  <option value="minibus">Minibús</option>
+                  <option value="camion">Camión</option>
+                  <option value="bus">Bus</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-slate-400">N° de Ejes (M3)</label>
+                <input id="veh-ejes" type="number" value="2" min="2" max="6"
+                  class="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400">Saldo Disponible (Bs)</label>
+              <input id="veh-saldo" type="number" step="0.5" value="100"
+                class="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white" />
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button onclick="guardarVehiculo()" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">
+                Guardar Vehículo
+              </button>
+              <button onclick="limpiarFormVehiculo()" class="px-3 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs">
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla de los 24+ Vehículos Registrados -->
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2 class="text-sm font-bold text-white">📋 Padrón de Vehículos Registrados (<span id="veh-total-count">0</span>)</h2>
+              <input id="veh-search" type="text" placeholder="Buscar por placa o propietario..." oninput="cargarVehiculos()"
+                class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white w-64" />
+            </div>
+            <div class="overflow-x-auto max-h-[480px]">
+              <table class="w-full text-left text-xs">
+                <thead class="text-slate-400 border-b border-slate-800 sticky top-0 bg-slate-900">
+                  <tr>
+                    <th class="py-2 px-2">Placa</th>
+                    <th class="py-2 px-2">Propietario</th>
+                    <th class="py-2 px-2">Categoría</th>
+                    <th class="py-2 px-2">Ejes</th>
+                    <th class="py-2 px-2">Saldo (Bs)</th>
+                    <th class="py-2 px-2">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="vehiculos-tbody" class="divide-y divide-slate-800/60"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 3: PASOS (HISTORIAL CON IMAGEN DE EVIDENCIA) -->
+      <!-- ========================================================= -->
+      <section id="tab-pasos" class="hidden space-y-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-sm font-bold text-white">📸 Historial de Pasos por Caseta con Imagen de Evidencia</h2>
+              <p class="text-xs text-slate-400">Incluye placa leída, placa normalizada, confianza OCR, categoría (M2), ejes (M3), pasajeros (M4) y tarifa cobrada.</p>
+            </div>
+            <div class="flex gap-2">
+              <input id="filtro-historial-placa" type="text" placeholder="Filtrar historial por placa..."
+                class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white" />
+              <button onclick="filtrarHistorialPorPlaca()" class="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold">
+                Buscar Placa
+              </button>
+              <button onclick="cargarPasos()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs">
+                Ver Todos
+              </button>
+            </div>
+          </div>
+          <div id="pasos-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 4: ALERTAS (PLACAS NO REGISTRADAS O SIN SALDO) -->
+      <!-- ========================================================= -->
+      <section id="tab-alertas" class="hidden space-y-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <h2 class="text-sm font-bold text-rose-400 mb-1">🚨 Centro de Alertas del Sistema de Peaje</h2>
+          <p class="text-xs text-slate-400 mb-4">
+            Se generan automáticamente en el backend cuando una cámara detecta una placa no registrada (posible evasión) o un vehículo sin saldo suficiente.
+          </p>
+          <div id="alertas-full-list" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 5: AGENTE CONVERSACIONAL (TEXTO E IMAGEN - 4 ESTADOS + SUGERENCIAS OCR) -->
+      <!-- ========================================================= -->
+      <section id="tab-chat" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Botones rápidos para demostrar los 4 estados obligatorios en el video -->
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+            <h2 class="text-sm font-bold text-white">🎯 Pruebas de los 4 Estados Oficiales (Sección 4.8 y 8)</h2>
+            <p class="text-xs text-slate-400">
+              Haga clic en cualquiera de los 4 casos exigidos en la rúbrica para verificar la respuesta del Agente Conversacional:
+            </p>
+
+            <button onclick="enviarConsultaRapidaAgente('29B110559')"
+              class="w-full p-3 rounded-xl bg-emerald-950/60 border border-emerald-600/40 text-left hover:bg-emerald-900/50 transition">
+              <div class="text-xs font-bold text-emerald-300">1️⃣ Registrada y con paso</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">Placa: <code>29B110559</code> o <code>FMO-6719</code></div>
+            </button>
+
+            <button onclick="enviarConsultaRapidaAgente('59M-181859')"
+              class="w-full p-3 rounded-xl bg-blue-950/60 border border-blue-600/40 text-left hover:bg-blue-900/50 transition">
+              <div class="text-xs font-bold text-blue-300">2️⃣ Registrada sin paso</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">Placa: <code>59M-181859</code> (normaliza guiones y verifica 0 pasos)</div>
+            </button>
+
+            <button onclick="enviarConsultaRapidaAgente('EVASOR-901')"
+              class="w-full p-3 rounded-xl bg-amber-950/60 border border-amber-600/40 text-left hover:bg-amber-900/50 transition">
+              <div class="text-xs font-bold text-amber-300">3️⃣ Identificada no registrada</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">Placa: <code>EVASOR-901</code> (captada en caseta, no registrada)</div>
+            </button>
+
+            <button onclick="enviarConsultaRapidaAgente('298110559')"
+              class="w-full p-3 rounded-xl bg-purple-950/60 border border-purple-600/40 text-left hover:bg-purple-900/50 transition">
+              <div class="text-xs font-bold text-purple-300">4️⃣ No existe + Sugerencia OCR (B↔8, O↔0, I↔1, S↔5)</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">Placa con error OCR: <code>298110559</code> → sugiere <code>29B110559</code></div>
+            </button>
+
+            <button onclick="enviarConsultaRapidaAgente('FM067I9')"
+              class="w-full p-3 rounded-xl bg-purple-950/40 border border-purple-600/30 text-left hover:bg-purple-900/40 transition">
+              <div class="text-xs font-bold text-purple-300">💡 Confusión OCR O↔0 e I↔1</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">Consulta <code>FM067I9</code> → sugiere <code>FMO6719</code></div>
+            </button>
+
+            <div class="pt-3 border-t border-slate-800">
+              <label class="text-xs font-semibold text-cyan-300 block mb-1.5">📸 Consultar al Agente con una de las 20 imágenes:</label>
+              <div class="flex gap-2">
+                <select id="agente-preset-img" class="flex-1 px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"></select>
+                <button onclick="enviarImagenPresetAgente()" class="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">
+                  Consultar Imagen
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ventana de Chat del Agente Conversacional -->
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col h-[580px]">
+            <div class="pb-3 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h2 class="text-sm font-bold text-white">🤖 Agente Conversacional de Control de Peaje</h2>
+                <p class="text-xs text-slate-400">Consulta la BD mediante Tools / Function Calling · Normaliza placas · Sugiere correcciones OCR · Cero alucinación</p>
+              </div>
+              <label class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 font-semibold cursor-pointer">
+                📷 Subir Foto de Placa
+                <input type="file" accept="image/*" class="hidden" onchange="enviarArchivoImagenAgente(event)" />
+              </label>
+            </div>
+
+            <div id="chat-messages" class="flex-1 overflow-y-auto py-4 space-y-3 pr-2"></div>
+
+            <div class="pt-3 border-t border-slate-800 flex gap-2">
+              <input id="chat-input" type="text" placeholder="Escribe una placa (ej. 29B110559, FMO-6719, 298110559) o consulta al agente..."
+                onkeydown="if(event.key==='Enter') enviarTextoAgente()"
+                class="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500" />
+              <button onclick="enviarTextoAgente()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold">
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 6: ESTADO DEL ENDPOINT DE INFERENCIA (INFERENCE_URL) -->
+      <!-- ========================================================= -->
+      <section id="tab-estado" class="hidden space-y-6">
+        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-base font-bold text-white">☁️ Estado del Endpoint Unificado de Inferencia (`INFERENCE_URL`)</h2>
+              <p class="text-xs text-slate-400">
+                La aplicación web es agnóstica a dónde corre la inferencia (RunPod o Google Colab); basta cambiar la variable <code>INFERENCE_URL</code>.
+              </p>
+            </div>
+            <button onclick="cargarEstadoInferencia()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">
+              🔄 Verificar Conexión Ahora
+            </button>
+          </div>
+          <div id="estado-inferencia-box" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    let TOKEN = localStorage.getItem('peaje_token') || '';
+    let USUARIO = JSON.parse(localStorage.getItem('peaje_usuario') || 'null');
+    let ULTIMO_EVENTO_ID = 0;
+    let POLL_TIMER = null;
+    let PUSHER_INSTANCE = null;
+
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + TOKEN
+      };
+    }
+
+    async function loginGoogleEmail(email) {
+      if (!email) return;
+      const errBox = document.getElementById('login-error');
+      errBox.classList.add('hidden');
+      try {
+        const resp = await fetch('/api/v1/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email_google: email.trim() })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+          errBox.classList.remove('hidden');
+          document.getElementById('login-error-text').textContent =
+            data.mensaje || 'Acceso denegado: Su cuenta de Google no está en la lista blanca.';
+          return;
+        }
+        TOKEN = data.token;
+        USUARIO = data.usuario;
+        localStorage.setItem('peaje_token', TOKEN);
+        localStorage.setItem('peaje_usuario', JSON.stringify(USUARIO));
+        iniciarApp(data.config_tiempo_real);
+      } catch (e) {
+        errBox.classList.remove('hidden');
+        document.getElementById('login-error-text').textContent = 'Error de red al autenticar con Google.';
+      }
+    }
+
+    function logout() {
+      TOKEN = '';
+      USUARIO = null;
+      localStorage.removeItem('peaje_token');
+      localStorage.removeItem('peaje_usuario');
+      if (POLL_TIMER) clearInterval(POLL_TIMER);
+      document.getElementById('app-view').classList.add('hidden');
+      document.getElementById('login-view').classList.remove('hidden');
+    }
+
+    function showTab(tabId) {
+      ['panel', 'vehiculos', 'pasos', 'alertas', 'chat', 'estado'].forEach(id => {
+        document.getElementById('tab-' + id).classList.toggle('hidden', id !== tabId);
+        const btn = document.getElementById('tab-btn-' + id);
+        if (id === tabId) {
+          btn.className = 'tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white';
+        } else {
+          btn.className = 'tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700';
+        }
+      });
+      if (tabId === 'vehiculos') cargarVehiculos();
+      if (tabId === 'pasos') cargarPasos();
+      if (tabId === 'alertas') cargarAlertas();
+      if (tabId === 'estado') cargarEstadoInferencia();
+    }
+
+    async function iniciarApp(cfgRT) {
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('app-view').classList.remove('hidden');
+      document.getElementById('user-email').textContent = USUARIO.email_google;
+      document.getElementById('user-role').textContent = USUARIO.rol;
+
+      await cargarDashboard();
+      await cargarListaImagenesPrueba();
+
+      const chatBox = document.getElementById('chat-messages');
+      if (chatBox.children.length === 0) {
+        agregarBurbujaChat('agente',
+          '👋 ¡Hola! Soy el **Agente Conversacional del Peaje IAM-811**. Envíame un número de placa en texto (ej. `29B110559`, `59M-181859`, `EVASOR-901`, `298110559`) o sube la foto de una placa para informarte su estado exacto en el sistema.');
+      }
+
+      // 1. Conectar Pusher Channels si hay PUSHER_KEY configurada
+      if (cfgRT && cfgRT.pusher_key && typeof Pusher !== 'undefined') {
+        try {
+          PUSHER_INSTANCE = new Pusher(cfgRT.pusher_key, { cluster: cfgRT.pusher_cluster || 'us2' });
+          const channel = PUSHER_INSTANCE.subscribe(cfgRT.canal || 'canal-peaje');
+          channel.bind('nuevo-paso', () => cargarDashboard());
+          channel.bind('nueva-alerta', () => cargarDashboard());
+          channel.bind('alerta-atendida', () => cargarDashboard());
+          channel.bind('evento-hardware', (d) => actualizarUIHardware(d.hardware));
+        } catch (err) {}
+      }
+
+      // 2. Sincronización continua en tiempo real sin recargar la página
+      if (POLL_TIMER) clearInterval(POLL_TIMER);
+      POLL_TIMER = setInterval(async () => {
+        if (!TOKEN) return;
+        try {
+          const r = await fetch('/api/v1/eventos/stream?desde=' + ULTIMO_EVENTO_ID, { headers: authHeaders() });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.hardware) actualizarUIHardware(d.hardware);
+            if (d.eventos && d.eventos.length > 0) {
+              ULTIMO_EVENTO_ID = d.ultimo_id_evento;
+              cargarDashboard();
+            }
+          }
+        } catch (e) {}
+      }, 1500);
+    }
+
+    function actualizarUIHardware(hw) {
+      if (!hw) return;
+      document.getElementById('hw-fase-badge').textContent = hw.fase;
+      document.getElementById('hw-lcd-line').textContent = hw.mensaje_lcd || 'PEAJE IAM-811';
+      document.getElementById('hw-serial-cmd').textContent = hw.comando_serial || '';
+
+      const lv = document.getElementById('led-verde');
+      const la = document.getElementById('led-amarillo');
+      const lr = document.getElementById('led-rojo');
+      const lb = document.getElementById('led-buzzer');
+
+      lv.className = hw.led_verde
+        ? 'w-6 h-6 rounded-full mx-auto bg-emerald-400 border border-emerald-200 led-glow-green'
+        : 'w-6 h-6 rounded-full mx-auto bg-emerald-950 border border-emerald-800';
+      la.className = hw.led_amarillo
+        ? 'w-6 h-6 rounded-full mx-auto bg-amber-400 border border-amber-200 led-glow-amber'
+        : 'w-6 h-6 rounded-full mx-auto bg-amber-950 border border-amber-800';
+      lr.className = hw.led_rojo
+        ? 'w-6 h-6 rounded-full mx-auto bg-rose-500 border border-rose-200 led-glow-red'
+        : 'w-6 h-6 rounded-full mx-auto bg-rose-950 border border-rose-800';
+      lb.textContent = hw.buzzer ? '🔊' : '🔈';
+      lb.className = hw.buzzer
+        ? 'w-6 h-6 rounded-full mx-auto bg-rose-600 border border-rose-300 flex items-center justify-center text-xs led-glow-red'
+        : 'w-6 h-6 rounded-full mx-auto bg-slate-800 border border-slate-700 flex items-center justify-center text-xs';
+    }
+
+    async function dispararPruebaHardware(fase) {
+      const r = await fetch('/api/v1/hardware/estado', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          fase: fase,
+          placa: fase === 'PASO_OK' ? '29B110559' : 'EVASOR901',
+          categoria: fase === 'PASO_OK' ? 'auto' : 'camion',
+          ejes: fase === 'PASO_OK' ? 2 : 3,
+          pasajeros: 2,
+          monto: fase === 'PASO_OK' ? 7.0 : 28.0
+        })
+      });
+      if (r.ok) {
+        const d = await r.json();
+        actualizarUIHardware(d.hardware);
+      }
+    }
+
+    async function cargarDashboard() {
+      const r = await fetch('/api/v1/dashboard/resumen', { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      ULTIMO_EVENTO_ID = d.ultimo_id_evento || ULTIMO_EVENTO_ID;
+
+      document.getElementById('kpi-pasos').textContent = d.total_pasos;
+      document.getElementById('kpi-recaudacion').textContent = 'Bs ' + Number(d.recaudacion_total || 0).toFixed(2);
+      document.getElementById('kpi-pasajeros').textContent = d.pasajeros_total || 0;
+      document.getElementById('kpi-alertas').textContent = d.alertas_pendientes || 0;
+      document.getElementById('nav-alert-count').textContent = d.alertas_pendientes || 0;
+
+      if (d.hardware) actualizarUIHardware(d.hardware);
+
+      const feed = document.getElementById('realtime-pasos-feed');
+      feed.innerHTML = (d.ultimos_pasos || []).slice(0, 8).map(p => `
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            ${p.imagen_url
+              ? `<img src="${p.imagen_url}" class="w-20 h-14 object-cover rounded-lg border border-slate-700" />`
+              : `<div class="w-20 h-14 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-xs text-slate-400 font-mono">${p.placa_normalizada || 'N/A'}</div>`}
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-white text-sm">${p.placa_normalizada || p.placa_leida}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                  p.estado === 'AUTORIZADO' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                }">${p.estado}</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">
+                Categoría: <strong class="text-slate-200 uppercase">${p.categoria_detectada}</strong> ·
+                Ejes: <strong class="text-slate-200">${p.ejes_detectados}</strong> ·
+                Pasajeros: <strong class="text-cyan-300">${p.pasajeros}</strong> ·
+                ${p.caseta_nombre}
+              </p>
+              <p class="text-[11px] text-slate-500">${(p.created_at || '').slice(0, 19).replace('T', ' ')}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-base font-bold text-emerald-400">Bs ${Number(p.monto).toFixed(2)}</span>
+            <p class="text-[10px] text-slate-500">OCR: ${(Number(p.confianza_ocr) * 100).toFixed(1)}%</p>
+          </div>
+        </div>
+      `).join('');
+
+      const aFeed = document.getElementById('realtime-alertas-feed');
+      aFeed.innerHTML = (d.ultimas_alertas || []).slice(0, 6).map(a => `
+        <div class="p-3 rounded-xl border ${a.atendida ? 'bg-slate-950 border-slate-800 opacity-60' : 'bg-rose-950/40 border-rose-500/40'}">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold ${a.atendida ? 'text-slate-400' : 'text-rose-300'}">⚠️ ${a.tipo}</span>
+            <span class="font-mono text-xs font-bold text-white">${a.placa || 'SIN PLACA'}</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">${a.caseta_nombre} · Cat: ${a.categoria.toUpperCase()} (${a.ejes} ejes) · Bs ${Number(a.monto).toFixed(2)}</p>
+          ${!a.atendida ? `<button onclick="marcarAlertaAtendida(${a.id})" class="mt-2 w-full py-1 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-200 text-[11px] font-semibold">✓ Marcar como Atendida</button>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function cargarListaImagenesPrueba() {
+      const r = await fetch('/api/v1/imagenes-prueba', { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      const opts = (d.imagenes || []).map(img => `<option value="${img}">Imagen Hito: ${img}</option>`).join('');
+      document.getElementById('preset-img-select').innerHTML = opts;
+      document.getElementById('agente-preset-img').innerHTML = opts;
+    }
+
+    async function procesarImagenPresetCaseta() {
+      const nombre = document.getElementById('preset-img-select').value;
+      if (!nombre) return;
+      const btn = document.getElementById('btn-procesar-preset');
+      btn.textContent = '⏳ Inferencia M1+M2+M3+M4...';
+      btn.disabled = true;
+      try {
+        const rImg = await fetch('/api/v1/imagenes-prueba?archivo=' + encodeURIComponent(nombre), { headers: authHeaders() });
+        const dImg = await rImg.json();
+        await enviarBase64ACaseta(dImg.imagen_base64);
+      } finally {
+        btn.textContent = '🚀 Enviar a Inferencia';
+        btn.disabled = false;
+      }
+    }
+
+    let VIDEO_STREAM_TIMER = null;
+    let VIDEO_MEDIA_STREAM = null;
+    let ENVIANDO_FRAME_VIDEO = false;
+    let ULTIMA_PLACA_VIDEO = '';
+    let ULTIMA_PLACA_TS = 0;
+
+    async function toggleCamaraEnVivo() {
+      const video = document.getElementById('caseta-video-player');
+      if (VIDEO_MEDIA_STREAM) {
+        detenerStreamVideo();
+        return;
+      }
+      try {
+        VIDEO_MEDIA_STREAM = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 960 }, height: { ideal: 540 } },
+          audio: false
+        });
+        video.srcObject = VIDEO_MEDIA_STREAM;
+        video.classList.remove('hidden');
+        await video.play();
+        iniciarLoopExtraccionFrames();
+      } catch (e) {
+        alert('No se pudo abrir la cámara web/móvil: ' + e.message);
+      }
+    }
+
+    function cargarVideoArchivoEnVivo(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      detenerStreamVideo();
+      const video = document.getElementById('caseta-video-player');
+      video.srcObject = null;
+      video.src = URL.createObjectURL(file);
+      video.classList.remove('hidden');
+      video.play();
+      iniciarLoopExtraccionFrames();
+    }
+
+    function iniciarLoopExtraccionFrames() {
+      if (VIDEO_STREAM_TIMER) clearInterval(VIDEO_STREAM_TIMER);
+      document.getElementById('btn-detener-video').classList.remove('hidden');
+      const fps = Number(document.getElementById('video-fps-select').value || 2);
+      const intervaloMs = Math.round(1000 / fps);
+      const video = document.getElementById('caseta-video-player');
+      const canvas = document.getElementById('caseta-video-canvas');
+      const ctx = canvas.getContext('2d');
+
+      VIDEO_STREAM_TIMER = setInterval(async () => {
+        if (ENVIANDO_FRAME_VIDEO || video.paused || video.ended || !video.videoWidth) return;
+        ENVIANDO_FRAME_VIDEO = true;
+        try {
+          const targetW = Math.min(800, video.videoWidth);
+          const targetH = Math.round((video.videoHeight / video.videoWidth) * targetW);
+          canvas.width = targetW;
+          canvas.height = targetH;
+          ctx.drawImage(video, 0, 0, targetW, targetH);
+          const b64 = canvas.toDataURL('image/jpeg', 0.82);
+          await enviarBase64ACaseta(b64);
+        } finally {
+          ENVIANDO_FRAME_VIDEO = false;
+        }
+      }, intervaloMs);
+    }
+
+    function detenerStreamVideo() {
+      if (VIDEO_STREAM_TIMER) {
+        clearInterval(VIDEO_STREAM_TIMER);
+        VIDEO_STREAM_TIMER = null;
+      }
+      if (VIDEO_MEDIA_STREAM) {
+        VIDEO_MEDIA_STREAM.getTracks().forEach(t => t.stop());
+        VIDEO_MEDIA_STREAM = null;
+      }
+      const video = document.getElementById('caseta-video-player');
+      if (video) {
+        video.pause();
+        video.classList.add('hidden');
+      }
+      document.getElementById('btn-detener-video').classList.add('hidden');
+    }
+
+    function procesarArchivoCaseta(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => enviarBase64ACaseta(reader.result);
+      reader.readAsDataURL(file);
+    }
+
+    async function enviarBase64ACaseta(b64) {
+      const casetaId = Number(document.getElementById('caseta-select').value || 1);
+      const box = document.getElementById('caseta-resultado-box');
+      box.classList.remove('hidden');
+      box.innerHTML = '<span class="text-amber-300">⏳ Ejecutando M1 (Placas+OCR), M2 (Segmentación), M3 (Keypoints Ejes) y M4 (Pasajeros)...</span>';
+
+      const r = await fetch('/api/v1/pasos/frame', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ imagen_base64: b64, caseta_id: casetaId })
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) {
+        box.innerHTML = `<span class="text-rose-400">Error: ${d.mensaje || 'Fallo en inferencia'}</span>`;
+        return;
+      }
+
+      if (d.paso && d.paso.imagen_url) {
+        const imgEl = document.getElementById('caseta-preview-img');
+        imgEl.src = d.paso.imagen_url;
+        imgEl.classList.remove('hidden');
+        document.getElementById('caseta-preview-placeholder').classList.add('hidden');
+      }
+
+      box.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-white">Placa Leída: <code class="text-emerald-400">${d.placa || 'ILEGIBLE'}</code></span>
+          <span class="px-2 py-0.5 rounded font-bold ${d.estado === 'AUTORIZADO' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${d.estado}</span>
+        </div>
+        <p class="text-slate-300">Categoría (M2): <strong class="uppercase">${d.categoria}</strong> · Ejes (M3): <strong>${d.ejes}</strong> · Pasajeros (M4): <strong class="text-cyan-300">${d.pasajeros}</strong></p>
+        <p class="text-slate-300">Tarifa: <strong class="text-emerald-400">Bs ${Number(d.tarifa).toFixed(2)}</strong> · Latencia Total: <strong>${d.latencia} ms</strong></p>
+      `;
+      await cargarDashboard();
+    }
+
+    async function cargarVehiculos() {
+      const q = document.getElementById('veh-search').value || '';
+      const r = await fetch('/api/v1/vehiculos?q=' + encodeURIComponent(q), { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('veh-total-count').textContent = (d.vehiculos || []).length;
+      document.getElementById('vehiculos-tbody').innerHTML = (d.vehiculos || []).map(v => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="py-2.5 px-2 font-mono font-bold text-white">${v.placa}</td>
+          <td class="py-2.5 px-2 text-slate-300">${v.propietario}</td>
+          <td class="py-2.5 px-2 uppercase text-blue-300 font-semibold">${v.categoria}</td>
+          <td class="py-2.5 px-2">${v.ejes}</td>
+          <td class="py-2.5 px-2 font-bold ${v.saldo < 10 ? 'text-rose-400' : 'text-emerald-400'}">Bs ${Number(v.saldo).toFixed(2)}</td>
+          <td class="py-2.5 px-2 space-x-2">
+            <button onclick='editarVehiculo(${JSON.stringify(v)})' class="text-blue-400 hover:underline">Editar</button>
+            <button onclick="eliminarVehiculo(${v.id})" class="text-rose-400 hover:underline">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function editarVehiculo(v) {
+      document.getElementById('form-veh-title').textContent = '✏️ Editar Vehículo: ' + v.placa;
+      document.getElementById('veh-id').value = v.id;
+      document.getElementById('veh-placa').value = v.placa;
+      document.getElementById('veh-propietario').value = v.propietario;
+      document.getElementById('veh-categoria').value = v.categoria;
+      document.getElementById('veh-ejes').value = v.ejes;
+      document.getElementById('veh-saldo').value = v.saldo;
+    }
+
+    function limpiarFormVehiculo() {
+      document.getElementById('form-veh-title').textContent = '➕ Registrar Vehículo en Padrón';
+      document.getElementById('veh-id').value = '';
+      document.getElementById('veh-placa').value = '';
+      document.getElementById('veh-propietario').value = '';
+      document.getElementById('veh-categoria').value = 'auto';
+      document.getElementById('veh-ejes').value = 2;
+      document.getElementById('veh-saldo').value = 100;
+    }
+
+    async function guardarVehiculo() {
+      const id = document.getElementById('veh-id').value;
+      const payload = {
+        placa: document.getElementById('veh-placa').value,
+        propietario: document.getElementById('veh-propietario').value,
+        categoria: document.getElementById('veh-categoria').value,
+        ejes: Number(document.getElementById('veh-ejes').value || 2),
+        saldo: Number(document.getElementById('veh-saldo').value || 0),
+        activo: true
+      };
+      const url = id ? `/api/v1/vehiculos/${id}` : '/api/v1/vehiculos';
+      const method = id ? 'PUT' : 'POST';
+      const r = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
+      const d = await r.json();
+      if (!r.ok || !d.ok) {
+        alert(d.mensaje || 'Error al guardar vehículo');
+        return;
+      }
+      limpiarFormVehiculo();
+      cargarVehiculos();
+    }
+
+    async function eliminarVehiculo(id) {
+      if (!confirm('¿Eliminar este vehículo del padrón?')) return;
+      const r = await fetch(`/api/v1/vehiculos/${id}`, { method: 'DELETE', headers: authHeaders() });
+      if (r.ok) cargarVehiculos();
+    }
+
+    async function cargarPasos() {
+      const r = await fetch('/api/v1/pasos', { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      renderPasosGrid(d.pasos || []);
+    }
+
+    async function filtrarHistorialPorPlaca() {
+      const placa = document.getElementById('filtro-historial-placa').value.trim();
+      if (!placa) return cargarPasos();
+      const r = await fetch(`/api/v1/placas/${encodeURIComponent(placa)}/historial`, { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      renderPasosGrid(d.historial || []);
+    }
+
+    function renderPasosGrid(lista) {
+      document.getElementById('pasos-grid').innerHTML = lista.map(p => `
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex gap-4">
+          ${p.imagen_url
+            ? `<img src="${p.imagen_url}" class="w-36 h-28 object-cover rounded-xl border border-slate-700" />`
+            : `<div class="w-36 h-28 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center font-mono text-xs text-slate-400">Evidencia ${p.placa_normalizada}</div>`}
+          <div class="flex-1 text-xs space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-base font-bold text-white">${p.placa_normalizada || p.placa_leida}</span>
+              <span class="px-2 py-0.5 rounded font-bold ${p.estado === 'AUTORIZADO' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${p.estado}</span>
+            </div>
+            <p class="text-slate-300">Categoría M2: <strong class="uppercase">${p.categoria_detectada}</strong> · Ejes M3: <strong>${p.ejes_detectados}</strong> · Pasajeros M4: <strong class="text-cyan-300">${p.pasajeros}</strong></p>
+            <p class="text-slate-400">Tarifa: <strong class="text-emerald-400">Bs ${Number(p.monto).toFixed(2)}</strong> · Confianza OCR: ${(Number(p.confianza_ocr) * 100).toFixed(1)}%</p>
+            <p class="text-slate-500">${p.caseta_nombre} · ${(p.created_at || '').slice(0, 19).replace('T', ' ')}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function cargarAlertas() {
+      const r = await fetch('/api/v1/alertas', { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('alertas-full-list').innerHTML = (d.alertas || []).map(a => `
+        <div class="p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-4 ${a.atendida ? 'bg-slate-950 border-slate-800' : 'bg-rose-950/30 border-rose-500/50'}">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${a.atendida ? 'bg-slate-800 text-slate-400' : 'bg-rose-600 text-white'}">${a.tipo}</span>
+              <span class="font-mono text-base font-bold text-white">Placa: ${a.placa || 'ILEGIBLE'}</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+              ${a.caseta_nombre} · Categoría: ${a.categoria.toUpperCase()} · ${a.ejes} ejes · ${a.pasajeros} pasajero(s) · Monto: Bs ${Number(a.monto).toFixed(2)} · ${(a.created_at || '').slice(0, 19).replace('T', ' ')}
+            </p>
+          </div>
+          <div>
+            ${a.atendida
+              ? `<span class="text-xs text-emerald-400 font-semibold">✓ Alerta Atendida</span>`
+              : `<button onclick="marcarAlertaAtendida(${a.id})" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">Atender Alerta</button>`}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function marcarAlertaAtendida(id) {
+      await fetch(`/api/v1/alertas/${id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ atendida: true }) });
+      await cargarDashboard();
+      await cargarAlertas();
+    }
+
+    function formatearMarkdownSimple(txt) {
+      return (txt || '')
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+        .replace(/`(.*?)`/g, '<code class="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono">$1</code>')
+        .replace(/\n/g, '<br/>');
+    }
+
+    function agregarBurbujaChat(rol, htmlTexto, extraImg) {
+      const box = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = rol === 'usuario' ? 'flex justify-end' : 'flex justify-start';
+      div.innerHTML = `
+        <div class="max-w-xl p-3.5 rounded-2xl text-xs leading-relaxed ${
+          rol === 'usuario'
+            ? 'bg-blue-600 text-white rounded-br-none'
+            : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none'
+        }">
+          ${extraImg ? `<img src="${extraImg}" class="max-h-36 rounded-xl mb-2 border border-slate-700" />` : ''}
+          <div>${formatearMarkdownSimple(htmlTexto)}</div>
+        </div>
+      `;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function enviarConsultaRapidaAgente(placa) {
+      document.getElementById('chat-input').value = placa;
+      await enviarTextoAgente();
+    }
+
+    async function enviarTextoAgente() {
+      const input = document.getElementById('chat-input');
+      const texto = input.value.trim();
+      if (!texto) return;
+      input.value = '';
+      agregarBurbujaChat('usuario', texto);
+
+      const r = await fetch('/api/v1/agente/chat', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ mensaje: texto })
+      });
+      const d = await r.json();
+      agregarBurbujaChat('agente', d.respuesta_agente || d.mensaje || 'Sin respuesta');
+    }
+
+    async function enviarImagenPresetAgente() {
+      const nombre = document.getElementById('agente-preset-img').value;
+      if (!nombre) return;
+      const rImg = await fetch('/api/v1/imagenes-prueba?archivo=' + encodeURIComponent(nombre), { headers: authHeaders() });
+      const dImg = await rImg.json();
+      await consultarImagenEnAgente(dImg.imagen_base64, 'Consulta por imagen: ' + nombre);
+    }
+
+    function enviarArchivoImagenAgente(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => consultarImagenEnAgente(reader.result, 'Imagen subida: ' + file.name);
+      reader.readAsDataURL(file);
+    }
+
+    async function consultarImagenEnAgente(b64, etiqueta) {
+      agregarBurbujaChat('usuario', etiqueta, b64);
+      const r = await fetch('/api/v1/placas/consultar-imagen', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ imagen_base64: b64 })
+      });
+      const d = await r.json();
+      agregarBurbujaChat('agente', d.respuesta_agente || d.mensaje, d.recorte_placa_b64 || d.imagen_evidencia_b64);
+    }
+
+    async function cargarEstadoInferencia() {
+      const box = document.getElementById('estado-inferencia-box');
+      box.innerHTML = '<div class="text-xs text-slate-400">Verificando endpoint de inferencia...</div>';
+      const r = await fetch('/api/v1/estado-inferencia', { headers: authHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      const det = d.detalle_endpoint || {};
+      const mods = det.modelos || {};
+      box.innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Estado del Endpoint:</span>
+            <span class="px-2.5 py-0.5 rounded-full font-bold ${d.responde ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
+              ${d.responde ? '● ONLINE (RESPONDE)' : '● OFFLINE'}
+            </span>
+          </div>
+          <p class="text-slate-300">Variable <code>INFERENCE_URL</code>: <code class="text-cyan-300">${d.inference_url}</code></p>
+          <p class="text-slate-300">Latencia de Ping: <strong>${d.latencia_ping_ms} ms</strong></p>
+          <p class="text-slate-300">Dispositivo / GPU: <strong>${det.dispositivo || 'cuda/cpu'} (${det.gpu || 'Cloud GPU'})</strong></p>
+          <p class="text-slate-400">Última verificación: ${d.verificado_en}</p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+          <div class="font-bold text-white mb-1">Modelos Cargados en el Endpoint Único:</div>
+          <p>✅ <strong>M1 (Detección de Placas ONNX + FastPlateOCR/EasyOCR):</strong> ${mods.M1_placas_onnx ? 'Activo' : 'Listo'}</p>
+          <p>✅ <strong>M2 (Segmentación de Instancias YOLO-seg 5 clases):</strong> ${mods.M2_segmentacion_base || 'yolo11s-seg.pt'}</p>
+          <p>✅ <strong>M3 (Keypoints de Ruedas YOLO-pose → Conteo de Ejes):</strong> Activo</p>
+          <p>✅ <strong>M4 (Bono +5 pts Segmentación Anónima de Pasajeros):</strong> Activo</p>
+        </div>
+      `;
+    }
+
+    if (TOKEN && USUARIO) {
+      iniciarApp({});
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: peaje-inteligente-iam811
+    runtime: python
+    rootDir: web/backend
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn peaje_config.wsgi:application --bind 0.0.0.0:$PORT --workers 2"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: INFERENCE_URL
+        value: "https://glad-blocked-cod-colon.trycloudflare.com"

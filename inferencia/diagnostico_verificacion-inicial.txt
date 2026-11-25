@@ -1,0 +1,23 @@
+========================================================================
+DIAGNÓSTICO DE ENTORNO EN LA NUBE - IAM-811 CONTROL DE PEAJE
+========================================================================
+Estudiante         : Amilkar Hugo Guarachi Nina
+Servicio           : verificacion-inicial
+Fecha UTC          : 2026-11-24T14:14:30.570925+00:00
+Sistema Operativo  : Windows 10 (AMD64) (LAPTOP-28H77M56)
+Python             : 3.11.9 (C:\Users\Amilkar GN\AppData\Local\Programs\Python\Python311\python.exe)
+Entorno Activo     : system/container
+------------------------------------------------------------------------
+PyTorch (torch)    : 2.14.1+cpu
+CUDA disponible    : False
+Versión CUDA       : None
+Versión cuDNN      : None
+GPUs detectadas    : 0
+Ultralytics YOLO   : no instalado (PermissionError)
+ONNX Runtime       : no instalado (ModuleNotFoundError) (Providers: [])
+OpenCV (cv2)       : 4.12.0
+FastPlateOCR       : no instalado (ModuleNotFoundError)
+EasyOCR            : no instalado (ModuleNotFoundError)
+FastAPI            : 0.159.1
+Django             : no instalado (ModuleNotFoundError)
+========================================================================

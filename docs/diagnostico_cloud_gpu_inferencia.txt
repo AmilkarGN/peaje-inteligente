@@ -1,0 +1,24 @@
+========================================================================
+DIAGNÓSTICO DE ENTORNO EN LA NUBE - IAM-811 CONTROL DE PEAJE
+========================================================================
+Estudiante         : Amilkar Hugo Guarachi Nina
+Servicio           : cloud-gpu-inferencia
+Fecha UTC          : 2026-11-25T03:59:08.573113+00:00
+Sistema Operativo  : Linux 6.6.159+ (x86_64) (65c332374c27)
+Python             : 3.13.16 (/usr/bin/python3)
+Entorno Activo     : system/container
+------------------------------------------------------------------------
+PyTorch (torch)    : 2.14.1+cu130
+CUDA disponible    : True
+Versión CUDA       : 13.0
+Versión cuDNN      : 92800
+GPUs detectadas    : 1
+  -> GPU #0        : Tesla T4 (14.56 GB VRAM, CC 7.5)
+Ultralytics YOLO   : 8.4.218
+ONNX Runtime       : 1.32.0 (Providers: ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'])
+OpenCV (cv2)       : 4.14.0
+FastPlateOCR       : instalado (sin __version__)
+EasyOCR            : 1.7.2
+FastAPI            : 0.141.1
+Django             : no instalado (ModuleNotFoundError)
+========================================================================

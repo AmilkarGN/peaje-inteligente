@@ -1,0 +1,16 @@
+# IAM-811 Servicio de Inferencia en la Nube (RunPod / Google Colab)
+# Versiones fijadas para reproducibilidad con venv / conda / mamba
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.17
+pydantic==2.10.2
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+onnxruntime-gpu==1.20.1
+ultralytics==8.3.40
+fast-plate-ocr==0.2.3
+easyocr==1.7.2
+pillow==11.0.0
+pyyaml==6.0.2
+requests==2.32.3
+roboflow==1.1.49

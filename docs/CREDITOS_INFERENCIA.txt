@@ -1,0 +1,23 @@
+Creditos y placas reales de las 20 imagenes (01.jpg - 20.jpg)
+Criterios asignados: Empieza 2 | Termina 9 | Contiene letra M
+
+01.jpg | placa=29B110559 | criterio=2+9 | Roboflow Universe (keremberke/license-plate-object-detection) | xemay1565_jpg.rf.c6278f4d4b1cf8b04606e0f62078b90d.jpg
+02.jpg | placa=59M181859 | criterio=M+9 | Roboflow Universe (keremberke/license-plate-object-detection) | xemay1571_jpg.rf.2cb4669932957bc361b534ef8cfac472.jpg
+03.jpg | placa=67M23789 | criterio=M+9 | Roboflow Universe (keremberke/license-plate-object-detection) | xemay2419_jpg.rf.1c9a31132577d34efaca835499c9ea4c.jpg
+04.jpg | placa=FMO6719 | criterio=M+9 | Wikimedia Commons | File:Třinec, Těšínská, autobus u nádraží (02).jpg | CC BY-SA 3.0
+05.jpg | placa=2739GKN | criterio=2 | Roboflow Universe (keremberke/license-plate-object-detection) | 0354ed1629a4b1b2_jpg.rf.2a2bade22e1070b580e24ec1265075f3.jpg
+06.jpg | placa=29A51796 | criterio=2 | Roboflow Universe (keremberke/license-plate-object-detection) | CarLongPlate854_jpg.rf.d0e441c6825c237c27e68529dec591f2.jpg
+07.jpg | placa=29A23950 | criterio=2 | Roboflow Universe (keremberke/license-plate-object-detection) | CarLongPlate983_jpg.rf.2d4b32c01e25b2f3a0345c89f208cd2a.jpg
+08.jpg | placa=248KRA | criterio=2 | Wikimedia Commons | File:2009 Toyota Yaris (NCP93R) YRX sedan (rear).jpg | CC BY 2.0
+09.jpg | placa=2TE1602 | criterio=2 | Wikimedia Commons | File:SOR NS12 back.jpg | CC BY-SA 4.0
+10.jpg | placa=2T85921 | criterio=2 | Wikimedia Commons | File:Svinov nádraží, autobus Veolia Transport Morava.jpg | CC BY-SA 3.0
+11.jpg | placa=JA799 | criterio=9 | Roboflow Universe (keremberke/license-plate-object-detection) | 005e1faed531ae7e_jpg.rf.8594853284daa8fee07ab1b83a178764.jpg
+12.jpg | placa=CP2319 | criterio=9 | Roboflow Universe (keremberke/license-plate-object-detection) | boderquandoi100_jpg.rf.c56479c0195963037964d18f1a7bf98f.jpg
+13.jpg | placa=68P27299 | criterio=9 | Roboflow Universe (keremberke/license-plate-object-detection) | xemayBigPlate143_jpg.rf.5436ca68d3773cea8697561d5c93e7f4.jpg
+14.jpg | placa=3T48849 | criterio=9 | Wikimedia Commons | File:Olomouc, autobusové nádraží, Karosa C 954, Arriva Morava, linka 728.jpg | CC BY 4.0
+15.jpg | placa=5T54109 | criterio=9 | Wikimedia Commons | File:Olomouc, Hlavní nádraží, autobus do Přerova.jpg | CC BY 4.0
+16.jpg | placa=M93JTA | criterio=M | Roboflow Universe (keremberke/license-plate-object-detection) | 0011d11a6a5ab5ad_jpg.rf.c207ab878b2a6b9d991fbf34fa4f6236.jpg
+17.jpg | placa=BM07WOZ | criterio=M | Roboflow Universe (keremberke/license-plate-object-detection) | 00d90448dcea9140_jpg.rf.3a6c6e55b881ce09630e734cebc9ded8.jpg
+18.jpg | placa=B2341UKM | criterio=M | Wikimedia Commons | File:Toyota Kijang Innova (Rear), Jakarta, Indonesia.jpg | CC0
+19.jpg | placa=MSWL345 | criterio=M | Wikimedia Commons | File:Dülmen, Kirchspiel, Daldrup, BMW i3 -- 2019 -- 7420.jpg | CC BY-SA 4.0
+20.jpg | placa=SM13HMU | criterio=M | Wikimedia Commons | File:Car park at Sainsbury's - geograph.org.uk - 3646022.jpg | CC BY-SA 2.0
