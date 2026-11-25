@@ -513,12 +513,12 @@ def ejecutar_m2_y_m4_segmentacion(
                 elif nombre_coco in ("car", "motorcycle", "bus", "truck") and s >= 0.35:
                     cat_coco = NORMALIZAR_CLASE.get(nombre_coco, "auto")
                     cat_coco = clasificar_minibus_heuristica(cat_coco, b.tolist(), imagen_bgr.shape)
-                    # Si nuestro M2 detectó el mismo vehículo como 'minibus' con buena confianza, respetamos 'minibus'
+                    # Si nuestro M2 propio detectó el mismo vehículo como 'minibus' (clase que no existe en COCO), respetamos 'minibus'
                     for d_m2 in vehiculos_detectados:
-                        if d_m2["categoria"] == "minibus" and d_m2["confianza"] >= 0.42:
+                        if d_m2["categoria"] == "minibus" and d_m2["confianza"] >= 0.25:
                             ix1, iy1 = max(d_m2["box"][0], int(b[0])), max(d_m2["box"][1], int(b[1]))
                             ix2, iy2 = min(d_m2["box"][2], int(b[2])), min(d_m2["box"][3], int(b[3]))
-                            if max(0, ix2 - ix1) * max(0, iy2 - iy1) > 0.4 * area_px:
+                            if max(0, ix2 - ix1) * max(0, iy2 - iy1) > 0.35 * area_px:
                                 cat_coco = "minibus"
                                 break
                     vehiculos_detectados.append({
@@ -591,39 +591,50 @@ def ejecutar_m2_y_m4_segmentacion(
         )
         principal = vehiculos_detectados[0]
 
-    # Filtrar personas asociadas al vehículo (M4 Pasajeros)
+    # Filtrar personas asociadas al vehículo (M4 Pasajeros):
+    # La persona debe estar DENTRO de la máscara del vehículo (parabrisas/ventanas), NO peatones afuera en la acera
     vx1, vy1, vx2, vy2 = principal["box"]
     vw = max(10, vx2 - vx1)
     vh = max(10, vy2 - vy1)
+    veh_mask_bool = principal["mask"].astype(bool) if principal.get("mask") is not None else None
     pasajeros_dentro = []
     for p in pasajeros_masks:
         px1, py1, px2, py2 = p["box"]
         cx, cy = (px1 + px2) / 2.0, (py1 + py2) / 2.0
-        # Considerar personas cuyo centro horizontal cae dentro del vehículo y cuya área es menor que la del vehículo (no peatones enormes afuera)
         p_area = max(1.0, (px2 - px1) * (py2 - py1))
-        if (vx1 + 0.04 * vw <= cx <= vx2 - 0.04 * vw) and (vy1 - 0.15 * vh <= cy <= vy2 - 0.10 * vh) and p_area < (vw * vh * 0.55):
-            pasajeros_dentro.append(p)
+        if not ((vx1 + 0.12 * vw <= cx <= vx2 - 0.12 * vw) and (vy1 + 0.06 * vh <= cy <= vy1 + 0.58 * vh) and p_area < (vw * vh * 0.35)):
+            continue
+        if veh_mask_bool is not None and p.get("mask") is not None:
+            m_p_bool = p["mask"].astype(bool)
+            total_p = max(1, int(m_p_bool.sum()))
+            dentro_veh = int((m_p_bool & veh_mask_bool).sum())
+            if (dentro_veh / total_p) < 0.65:
+                continue
+        pasajeros_dentro.append(p)
 
     # Si no se detectó pasajero en la imagen completa por reflejo del parabrisas, hacer zoom en la cabina superior del vehículo
-    if not pasajeros_dentro and coco_model is not None and vh >= 90 and vw >= 90:
-        cy1, cy2 = max(0, vy1), min(H, int(vy1 + vh * 0.65))
-        cx1, cx2 = max(0, int(vx1 + vw * 0.08)), min(W, int(vx2 - vw * 0.08))
+    if not pasajeros_dentro and coco_model is not None and vh >= 110 and vw >= 110:
+        cy1, cy2 = max(0, int(vy1 + vh * 0.06)), min(H, int(vy1 + vh * 0.54))
+        cx1, cx2 = max(0, int(vx1 + vw * 0.14)), min(W, int(vx2 - vw * 0.14))
         recorte_cabina = imagen_bgr[cy1:cy2, cx1:cx2]
         if recorte_cabina.shape[0] >= 40 and recorte_cabina.shape[1] >= 40:
-            # Mejorar contraste local en el parabrisas (CLAHE) para ver siluetas tras el vidrio
             lab = cv2.cvtColor(recorte_cabina, cv2.COLOR_BGR2LAB)
             l_ch, a_ch, b_ch = cv2.split(lab)
-            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(4, 4))
+            clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(4, 4))
             recorte_enh = cv2.cvtColor(cv2.merge((clahe.apply(l_ch), a_ch, b_ch)), cv2.COLOR_LAB2BGR)
-            res_cab = coco_model.predict(recorte_enh, conf=0.14, classes=[0], device=DEVICE, retina_masks=True, verbose=False)[0]
+            res_cab = coco_model.predict(recorte_enh, conf=0.22, classes=[0], device=DEVICE, retina_masks=True, verbose=False)[0]
             if res_cab.masks is not None and res_cab.boxes is not None:
                 ch, cw = recorte_cabina.shape[:2]
                 for m_raw, s, b in zip(res_cab.masks.data.cpu().numpy(), res_cab.boxes.conf.cpu().numpy(), res_cab.boxes.xyxy.cpu().numpy()):
                     m_crop = (cv2.resize(m_raw.astype(np.float32), (cw, ch), interpolation=cv2.INTER_NEAREST) > 0.5).astype(np.uint8)
-                    if int(m_crop.sum()) < 35:
+                    if int(m_crop.sum()) < 45:
                         continue
                     mask_full = np.zeros((H, W), dtype=np.uint8)
                     mask_full[cy1:cy2, cx1:cx2] = m_crop
+                    if veh_mask_bool is not None:
+                        dentro_v = int((mask_full.astype(bool) & veh_mask_bool).sum())
+                        if (dentro_v / max(1, int(m_crop.sum()))) < 0.70:
+                            continue
                     pasajeros_dentro.append({
                         "conf": float(s),
                         "box": [float(b[0] + cx1), float(b[1] + cy1), float(b[2] + cx1), float(b[3] + cy1)],
@@ -693,7 +704,7 @@ def agrupar_keypoints_en_ejes(keypoints: List[Dict[str, float]], ancho_vehiculo:
         return EJES_POR_DEFECTO.get(categoria, 2)
 
     xs = sorted(kp["x"] for kp in keypoints)
-    umbral_x = max(18.0, ancho_vehiculo * 0.11)
+    umbral_x = max(14.0, ancho_vehiculo * 0.055)
     grupos = [[xs[0]]]
     for x in xs[1:]:
         if abs(x - np.mean(grupos[-1])) <= umbral_x:
@@ -761,10 +772,10 @@ def ejecutar_m3_keypoints_ejes(
                     if aspect_l < 0.42 or aspect_l > 1.85:
                         continue
                     altura_llanta = max(8.0, bh_l)
-                    if altura_llanta < 0.08 * vh or altura_llanta > 0.58 * vh:
+                    if altura_llanta < 0.11 * vh or altura_llanta > 0.55 * vh:
                         continue
                     # Debe estar en la mitad inferior del vehículo y NO debajo del vehículo en el pavimento ni arriba en espejos/faros
-                    if not ((vx1 - 0.04 * vw <= cx <= vx2 + 0.04 * vw) and (vy1 + 0.42 * vh <= cy <= vy2 - 0.01 * vh)):
+                    if not ((vx1 - 0.02 * vw <= cx <= vx2 + 0.02 * vw) and (vy1 + 0.46 * vh <= cy <= vy2 - 0.01 * vh)):
                         continue
                     # Nunca aceptar un falso positivo encima de la placa
                     if caja_placa and len(caja_placa) == 4:
