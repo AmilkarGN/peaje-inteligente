@@ -264,74 +264,81 @@
           </div>
         </div>
 
-        <!-- Monitor Hardware Arduino + Captura de Caseta en Vivo -->
+        <!-- Monitor Hardware Arduino (2 LEDs + 1 Buzzer) + Captura de Caseta en Vivo -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Monitor Dispositivo Hardware Arduino -->
+          <!-- Monitor Dispositivo Hardware Arduino Simplificado (2 LEDs + 1 Buzzer) -->
           <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-700">
+                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-800">
                   <i data-lucide="cpu" class="w-4 h-4 text-blue-600"></i>
-                  <span>Dispositivo Hardware Arduino</span>
+                  <span>Tu Arduino (2 LEDs + Buzzer)</span>
                 </div>
                 <span id="hw-fase-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
                   LISTO
                 </span>
               </div>
-              <p class="text-xs text-slate-500 mb-4">
-                Estado sincronizado con <code class="text-blue-700 bg-blue-50 px-1 py-0.5 rounded">/api/v1/hardware/estado</code>:
+              <p class="text-xs text-slate-500 mb-3">
+                Conecta tus 2 LEDs y 1 Buzzer a tu Arduino y vincúlalo por USB para que suene y encienda en cada paso:
               </p>
 
-              <!-- Indicadores LED -->
-              <div class="grid grid-cols-4 gap-2.5 text-center my-3">
-                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div id="led-verde" class="w-5 h-5 rounded-full mx-auto bg-slate-200 border border-slate-300"></div>
-                  <p class="text-[11px] font-semibold mt-2 text-slate-800">Verde</p>
-                  <p class="text-[10px] text-slate-500">D10 · OK</p>
+              <!-- 2 LEDs y 1 Buzzer reales -->
+              <div class="grid grid-cols-3 gap-3 text-center my-3">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div id="led-verde" class="w-6 h-6 rounded-full mx-auto bg-slate-200 border border-slate-300"></div>
+                  <p class="text-xs font-bold mt-2 text-slate-800">LED 1 (OK)</p>
+                  <p class="text-[11px] text-emerald-700 font-mono font-semibold">Pin 10</p>
                 </div>
-                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div id="led-amarillo" class="w-5 h-5 rounded-full mx-auto bg-slate-200 border border-slate-300"></div>
-                  <p class="text-[11px] font-semibold mt-2 text-slate-800">Amarillo</p>
-                  <p class="text-[10px] text-slate-500">D9 · Proc</p>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div id="led-rojo" class="w-6 h-6 rounded-full mx-auto bg-slate-200 border border-slate-300"></div>
+                  <p class="text-xs font-bold mt-2 text-slate-800">LED 2 (Alerta)</p>
+                  <p class="text-[11px] text-red-600 font-mono font-semibold">Pin 8</p>
                 </div>
-                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div id="led-rojo" class="w-5 h-5 rounded-full mx-auto bg-slate-200 border border-slate-300"></div>
-                  <p class="text-[11px] font-semibold mt-2 text-slate-800">Rojo</p>
-                  <p class="text-[10px] text-slate-500">D8 · Alerta</p>
-                </div>
-                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div id="led-buzzer" class="w-5 h-5 rounded-full mx-auto bg-slate-200 border border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-600">OFF</div>
-                  <p class="text-[11px] font-semibold mt-2 text-slate-800">Buzzer</p>
-                  <p class="text-[10px] text-slate-500">D7 · Audio</p>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div id="led-buzzer" class="w-6 h-6 rounded-full mx-auto bg-slate-200 border border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-600">OFF</div>
+                  <p class="text-xs font-bold mt-2 text-slate-800">Buzzer</p>
+                  <p class="text-[11px] text-blue-700 font-mono font-semibold">Pin 7</p>
                 </div>
               </div>
+              <div id="led-amarillo" class="hidden"></div>
+              <div id="hw-lcd-line" class="hidden"></div>
+              <div id="hw-serial-cmd" class="hidden"></div>
 
-              <!-- Visor LCD 16x2 -->
-              <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs text-emerald-400">
-                <div class="text-[10px] text-slate-400 uppercase">Display LCD 16x2 Arduino:</div>
-                <div id="hw-lcd-line" class="text-sm font-bold tracking-wider mt-0.5">PEAJE IAM-811 LISTO</div>
-                <div id="hw-serial-cmd" class="text-[10px] text-slate-400 truncate mt-1">CMD:0|FASE:LISTO</div>
+              <!-- Guía rápida de conexión física -->
+              <div class="p-3 rounded-xl bg-blue-50/60 border border-blue-200 text-xs text-slate-700 space-y-1">
+                <div class="font-bold text-blue-900">Cómo conectar tus cables en el Arduino:</div>
+                <div>• <strong>Pin 10:</strong> Pata positiva (+) del LED 1 (Paso válido)</div>
+                <div>• <strong>Pin 8:</strong> Pata positiva (+) del LED 2 (Alerta)</div>
+                <div>• <strong>Pin 7:</strong> Pata positiva (+) del Buzzer</div>
+                <div>• <strong>GND:</strong> Patas negativas (-) de ambos LEDs y Buzzer</div>
               </div>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-slate-200 flex gap-2">
-              <button onclick="dispararPruebaHardware('PASO_OK')" class="flex-1 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold hover:bg-emerald-100">
-                Simular Paso OK
+            <div class="mt-4 pt-3 border-t border-slate-200 space-y-2">
+              <button onclick="conectarArduinoUSB()" id="btn-arduino-usb"
+                class="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center gap-2">
+                <i data-lucide="usb" class="w-4 h-4"></i>
+                <span id="txt-arduino-usb">Conectar Arduino por USB (Web Serial)</span>
               </button>
-              <button onclick="dispararPruebaHardware('ALERTA_NO_REGISTRADA')" class="flex-1 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">
-                Simular Alarma
-              </button>
+              <div class="flex gap-2">
+                <button onclick="dispararPruebaHardware('PASO_OK')" class="flex-1 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold hover:bg-emerald-100">
+                  Probar LED 1 (OK)
+                </button>
+                <button onclick="dispararPruebaHardware('ALERTA_NO_REGISTRADA')" class="flex-1 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100">
+                  Probar LED 2 + Buzzer
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Captura de Caseta en Vivo (Video 2-5 FPS, Cámara o Imagen) -->
+          <!-- Captura de Caseta en Vivo (Intuitiva por Pestañas) -->
           <div class="lg:col-span-2 p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
               <div class="flex items-center gap-2">
-                <i data-lucide="video" class="w-4 h-4 text-blue-600"></i>
+                <i data-lucide="scan-eye" class="w-5 h-5 text-blue-600"></i>
                 <div>
-                  <h2 class="text-sm font-bold text-slate-900">Captura de Caseta en Tiempo Real (`POST /api/v1/pasos/frame`)</h2>
-                  <p class="text-xs text-slate-500">Procesa flujo de video de 2 a 5 FPS, cámara en vivo o imágenes de prueba con M1 + M2 + M3 + M4.</p>
+                  <h2 class="text-sm font-bold text-slate-900">Caseta de Control e Identificación de Vehículos</h2>
+                  <p class="text-xs text-slate-500">Analiza placa (M1), tipo de vehículo (M2), ejes (M3) y pasajeros (M4) cobrando la tarifa automáticamente.</p>
                 </div>
               </div>
               <select id="caseta-select" class="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-800 font-medium">
@@ -341,30 +348,67 @@
               </select>
             </div>
 
+            <!-- Selector de modo de entrada intuitivo -->
+            <div class="flex flex-wrap gap-1.5 mb-4 p-1 rounded-xl bg-slate-100 border border-slate-200">
+              <button onclick="cambiarModoCaseta('muestra')" id="modo-btn-muestra"
+                class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-white text-blue-700 shadow-2xs">
+                1. Vehículos de Prueba
+              </button>
+              <button onclick="cambiarModoCaseta('subir')" id="modo-btn-subir"
+                class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900">
+                2. Subir Mi Propia Foto
+              </button>
+              <button onclick="cambiarModoCaseta('video')" id="modo-btn-video"
+                class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900">
+                3. Cámara o Video en Vivo
+              </button>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-3">
-                <!-- Controles de Video y Cámara 2-5 FPS -->
-                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <!-- Modo 1: Vehículos de Prueba -->
+                <div id="panel-modo-muestra" class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <label class="text-xs font-semibold text-slate-800 block">
+                    Elige un vehículo de prueba y presiona "Analizar Vehículo":
+                  </label>
+                  <select id="preset-img-select" class="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 font-medium"></select>
+                  <button onclick="procesarImagenPresetCaseta()" id="btn-procesar-preset"
+                    class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs">
+                    Analizar Vehículo Ahora
+                  </button>
+                </div>
+
+                <!-- Modo 2: Subir Propia Foto -->
+                <div id="panel-modo-subir" class="hidden p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <label class="text-xs font-semibold text-slate-800 block">
+                    Selecciona cualquier foto de un vehículo desde tu computadora o celular:
+                  </label>
+                  <input type="file" id="caseta-file-input" accept="image/*" onchange="procesarArchivoCaseta(event)"
+                    class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700" />
+                </div>
+
+                <!-- Modo 3: Cámara o Video en Vivo (2-5 FPS) -->
+                <div id="panel-modo-video" class="hidden p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
                   <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-slate-800">Flujo de Video Continuo (2-5 FPS)</span>
+                    <span class="text-xs font-semibold text-slate-800">Velocidad de Captura:</span>
                     <select id="video-fps-select" class="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-xs text-slate-800">
-                      <option value="2">2 FPS (500 ms)</option>
-                      <option value="3">3 FPS (333 ms)</option>
-                      <option value="4">4 FPS (250 ms)</option>
-                      <option value="5">5 FPS (200 ms)</option>
+                      <option value="2">2 FPS (Cada 500 ms)</option>
+                      <option value="3">3 FPS (Cada 333 ms)</option>
+                      <option value="4">4 FPS (Cada 250 ms)</option>
+                      <option value="5">5 FPS (Cada 200 ms)</option>
                     </select>
                   </div>
                   <div class="flex flex-wrap gap-2">
                     <button onclick="toggleCamaraEnVivo()" id="btn-camara-vivo"
-                      class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
-                      Activar Cámara
+                      class="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+                      Usar Cámara
                     </button>
-                    <label class="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-xs font-semibold text-center cursor-pointer">
-                      Cargar Video (.mp4)
+                    <label class="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-xs font-semibold text-center cursor-pointer">
+                      Subir Video (.mp4)
                       <input type="file" accept="video/*" class="hidden" onchange="cargarVideoArchivoEnVivo(event)" />
                     </label>
                     <button onclick="detenerStreamVideo()" id="btn-detener-video"
-                      class="hidden py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">
+                      class="hidden py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">
                       Detener
                     </button>
                   </div>
@@ -372,30 +416,13 @@
                   <canvas id="caseta-video-canvas" class="hidden"></canvas>
                 </div>
 
-                <div>
-                  <label class="text-xs font-medium text-slate-600 block mb-1">Probar con imágenes del lote de evaluación (01.jpg - 20.jpg):</label>
-                  <div class="flex gap-2">
-                    <select id="preset-img-select" class="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900"></select>
-                    <button onclick="procesarImagenPresetCaseta()" id="btn-procesar-preset"
-                      class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shrink-0">
-                      Analizar Frame
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="text-xs font-medium text-slate-600 block mb-1">O seleccionar imagen desde dispositivo:</label>
-                  <input type="file" id="caseta-file-input" accept="image/*" onchange="procesarArchivoCaseta(event)"
-                    class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-slate-300 file:bg-white file:text-slate-800 file:font-semibold hover:file:bg-slate-50" />
-                </div>
-
                 <div id="caseta-resultado-box" class="hidden p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1"></div>
               </div>
 
-              <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[200px]">
+              <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[210px]">
                 <img id="caseta-preview-img" class="max-h-52 rounded-lg object-contain hidden border border-slate-300" alt="Evidencia de inferencia" />
                 <p id="caseta-preview-placeholder" class="text-xs text-slate-400 text-center px-4">
-                  Vista previa de evidencia: muestra la placa detectada (M1), máscara de vehículo (M2), keypoints de llantas y ejes (M3) y conteo de pasajeros (M4).
+                  Aquí verás la imagen analizada con su placa leída, máscara del vehículo y ruedas detectadas.
                 </p>
               </div>
             </div>
@@ -764,9 +791,54 @@
       }, 1500);
     }
 
+    let ARDUINO_PORT = null;
+    let ARDUINO_WRITER = null;
+    let ULTIMO_CODIGO_HW_SERIAL = -1;
+
+    async function conectarArduinoUSB() {
+      if (!('serial' in navigator)) {
+        alert('Usa Google Chrome o Microsoft Edge en tu computadora para conectar el Arduino por USB (Web Serial API).');
+        return;
+      }
+      try {
+        ARDUINO_PORT = await navigator.serial.requestPort();
+        await ARDUINO_PORT.open({ baudRate: 9600 });
+        const encoder = new TextEncoderStream();
+        encoder.readable.pipeTo(ARDUINO_PORT.writable);
+        ARDUINO_WRITER = encoder.writable.getWriter();
+        document.getElementById('txt-arduino-usb').textContent = 'Arduino Conectado por USB';
+        document.getElementById('btn-arduino-usb').className =
+          'w-full py-2.5 px-3 rounded-xl bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-2';
+        await enviarComandoAArduinoFisico('FASE:PASO_OK');
+      } catch (e) {
+        alert('No se pudo abrir el puerto del Arduino: ' + e.message);
+      }
+    }
+
+    async function enviarComandoAArduinoFisico(cmd) {
+      if (!ARDUINO_WRITER) return;
+      try {
+        await ARDUINO_WRITER.write(cmd + '\n');
+      } catch (e) {}
+    }
+
+    function cambiarModoCaseta(modo) {
+      ['muestra', 'subir', 'video'].forEach(m => {
+        document.getElementById('panel-modo-' + m).classList.toggle('hidden', m !== modo);
+        const btn = document.getElementById('modo-btn-' + m);
+        btn.className = (m === modo)
+          ? 'flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-white text-blue-700 shadow-2xs'
+          : 'flex-1 py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900';
+      });
+    }
+
     function actualizarUIHardware(hw) {
       if (!hw) return;
       document.getElementById('hw-fase-badge').textContent = hw.fase;
+      if (hw.codigo_evento && hw.codigo_evento !== ULTIMO_CODIGO_HW_SERIAL) {
+        ULTIMO_CODIGO_HW_SERIAL = hw.codigo_evento;
+        enviarComandoAArduinoFisico(hw.comando_serial || ('FASE:' + hw.fase));
+      }
       document.getElementById('hw-lcd-line').textContent = hw.mensaje_lcd || 'PEAJE IAM-811';
       document.getElementById('hw-serial-cmd').textContent = hw.comando_serial || '';
 
@@ -868,11 +940,34 @@
       `).join('');
     }
 
+    const ETIQUETAS_IMAGENES_HITO = {
+      '01.jpg': '01.jpg — Moto (Placa: 29B110559 · Autorizado)',
+      '02.jpg': '02.jpg — Moto (Placa: 59M181859 · Autorizado)',
+      '03.jpg': '03.jpg — Moto (Placa: 67M23789 · Autorizado)',
+      '04.jpg': '04.jpg — Bus 3 Ejes (Placa: FMO6719 · Autorizado)',
+      '05.jpg': '05.jpg — Minibús (Placa: 2739GKN · Autorizado)',
+      '06.jpg': '06.jpg — Auto (Placa: 29A51796 · Autorizado)',
+      '07.jpg': '07.jpg — Auto Sin Saldo (Placa: 29A23950 · Genera Alerta)',
+      '08.jpg': '08.jpg — Auto (Placa: 248KRA · Autorizado)',
+      '09.jpg': '09.jpg — Bus (Placa: 2TE1602 · Autorizado)',
+      '10.jpg': '10.jpg — Bus 3 Ejes (Placa: 2T85921 · Autorizado)',
+      '11.jpg': '11.jpg — Auto (Placa: JA799 · Autorizado)',
+      '12.jpg': '12.jpg — Camión 3 Ejes (Placa: CP2319 · Autorizado)',
+      '13.jpg': '13.jpg — Moto (Placa: 68P27299 · Autorizado)',
+      '14.jpg': '14.jpg — Bus (Placa: 3T48849 · Autorizado)',
+      '15.jpg': '15.jpg — Bus (Placa: 5T54109 · Autorizado)',
+      '16.jpg': '16.jpg — Auto (Placa: M93JTA · Autorizado)',
+      '17.jpg': '17.jpg — Camión 3 Ejes (Placa: BM07WOZ · Autorizado)',
+      '18.jpg': '18.jpg — Minibús (Placa: B2341UKM · Autorizado)',
+      '19.jpg': '19.jpg — Auto (Placa: MSWL345 · Autorizado)',
+      '20.jpg': '20.jpg — Minibús (Placa: SM13HMU · Autorizado)'
+    };
+
     async function cargarListaImagenesPrueba() {
       const r = await fetch('/api/v1/imagenes-prueba', { headers: authHeaders() });
       if (!r.ok) return;
       const d = await r.json();
-      const opts = (d.imagenes || []).map(img => `<option value="${img}">Imagen: ${img}</option>`).join('');
+      const opts = (d.imagenes || []).map(img => `<option value="${img}">${ETIQUETAS_IMAGENES_HITO[img] || ('Imagen: ' + img)}</option>`).join('');
       document.getElementById('preset-img-select').innerHTML = opts;
       document.getElementById('agente-preset-img').innerHTML = opts;
     }

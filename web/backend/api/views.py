@@ -299,6 +299,7 @@ def registrar_paso_frame_view(request):
             solo_placa=False,
         )
     except Exception as exc:
+        actualizar_estado_hardware(fase="LISTO", placa="---")
         return JsonResponse(
             {
                 "ok": False,

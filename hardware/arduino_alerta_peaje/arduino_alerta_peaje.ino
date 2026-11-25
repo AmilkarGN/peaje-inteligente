@@ -1,100 +1,77 @@
 /*
  * IAM-811 Machine Learning y Aprendizaje Profundo
- * Bono +5 Puntos: Conexión de Alerta a un Dispositivo de Hardware (Arduino Uno / Nano / Mega)
+ * Bono +5 Puntos: Dispositivo Físico de Alerta con Arduino (2 LEDs + 1 Buzzer)
  * Autor: Amilkar Hugo Guarachi Nina
  * Docente: Ing. Alvaro Pinto Mamani
  *
- * Señaliza físicamente los 4 procesos exigidos en la sección 10:
- * 1. IDENTIFICACIÓN / INFERENCIA -> LED Amarillo (Pin D9) encendido
- * 2. ACCIÓN (PASO_OK)            -> LED Verde (Pin D10) + 1 Beep corto + Servo Barrera 90°
- * 3. ALERTA (NO_REGISTRADA)      -> LED Rojo (Pin D8) parpadeante + Alarma Buzzer (Pin D7)
- * 4. ALERTA (SIN_SALDO)          -> LED Rojo + LED Amarillo + Doble tono Buzzer
+ * Conexión física ultra simple (solo necesitas tu Arduino, 2 LEDs y 1 Buzzer):
+ * - Pin D10 -> Pata positiva (+) del LED 1 (Verde o Azul): Paso Autorizado / Identificación OK
+ * - Pin D8  -> Pata positiva (+) del LED 2 (Rojo): Alerta (Placa no registrada o sin saldo)
+ * - Pin D7  -> Pata positiva (+) del Buzzer: Sonido de confirmación o alarma
+ * - Pin GND -> Patas negativas (-) de los 2 LEDs y del Buzzer
  *
- * Compatible con:
- * - Web Serial API directamente desde el navegador abierto en el subdominio HTTPS de producción
- *   (sin servidores locales ni túneles)
- * - Puente Cloud HTTPS (/api/v1/hardware/estado?formato=serial)
+ * Funciona directamente desde la aplicación web en producción (https://peaje-inteligente.onrender.com)
+ * haciendo clic en el botón "Conectar Arduino por USB" (Web Serial API de Chrome/Edge).
  */
 
-#include <Servo.h>
+const int PIN_LED_OK     = 10; // LED 1: Paso autorizado / Vehículo válido
+const int PIN_LED_ALERTA = 8;  // LED 2: Alerta (Placa no registrada o sin saldo)
+const int PIN_BUZZER     = 7;  // Buzzer sonoro
 
-const int PIN_LED_VERDE    = 10;  // Paso autorizado / Acción OK
-const int PIN_LED_AMARILLO = 9;   // Identificación e Inferencia en la nube
-const int PIN_LED_ROJO     = 8;   // Alerta de evento (Evasión / Sin saldo)
-const int PIN_BUZZER       = 7;   // Buzzer sonoro de alerta
-const int PIN_SERVO        = 6;   // Servo opcional de barrera de peaje
-
-Servo barreraServo;
 String bufferSerial = "";
-long ultimoCodigoEvento = -1;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(PIN_LED_VERDE, OUTPUT);
-  pinMode(PIN_LED_AMARILLO, OUTPUT);
-  pinMode(PIN_LED_ROJO, OUTPUT);
+  pinMode(PIN_LED_OK, OUTPUT);
+  pinMode(PIN_LED_ALERTA, OUTPUT);
   pinMode(PIN_BUZZER, OUTPUT);
 
-  barreraServo.attach(PIN_SERVO);
-  barreraServo.write(0); // Barrera cerrada
-
-  // Secuencia de autodiagnóstico al encender el Arduino
-  digitalWrite(PIN_LED_AMARILLO, HIGH);
-  tone(PIN_BUZZER, 1200, 120);
+  // Prueba rápida al conectar el Arduino (parpadeo breve + 1 beep)
+  digitalWrite(PIN_LED_OK, HIGH);
+  tone(PIN_BUZZER, 1500, 100);
   delay(200);
-  digitalWrite(PIN_LED_AMARILLO, LOW);
-  digitalWrite(PIN_LED_VERDE, HIGH);
+  digitalWrite(PIN_LED_OK, LOW);
+  digitalWrite(PIN_LED_ALERTA, HIGH);
   delay(200);
-  digitalWrite(PIN_LED_VERDE, LOW);
+  digitalWrite(PIN_LED_ALERTA, LOW);
 
-  Serial.println("ARDUINO_PEAJE_IAM811_LISTO");
+  Serial.println("ARDUINO_LISTO");
 }
 
 void apagarTodo() {
-  digitalWrite(PIN_LED_VERDE, LOW);
-  digitalWrite(PIN_LED_AMARILLO, LOW);
-  digitalWrite(PIN_LED_ROJO, LOW);
+  digitalWrite(PIN_LED_OK, LOW);
+  digitalWrite(PIN_LED_ALERTA, LOW);
   noTone(PIN_BUZZER);
 }
 
-void ejecutarInferenciaActiva() {
+void senalInferencia() {
+  // Parpadeo corto del LED 1 indicando que está analizando el vehículo
   apagarTodo();
-  digitalWrite(PIN_LED_AMARILLO, HIGH);
-  tone(PIN_BUZZER, 900, 60);
+  digitalWrite(PIN_LED_OK, HIGH);
+  tone(PIN_BUZZER, 1000, 50);
+  delay(120);
+  digitalWrite(PIN_LED_OK, LOW);
 }
 
-void ejecutarPasoAutorizado() {
+void senalPasoAutorizado() {
+  // Enciende LED 1 (Verde/OK) fijo y emite 1 beep agudo de confirmación
   apagarTodo();
-  digitalWrite(PIN_LED_VERDE, HIGH);
-  tone(PIN_BUZZER, 1800, 150);
-  barreraServo.write(90); // Abrir barrera
-  delay(2500);
-  barreraServo.write(0);  // Cerrar barrera
+  digitalWrite(PIN_LED_OK, HIGH);
+  tone(PIN_BUZZER, 2000, 180);
 }
 
-void ejecutarAlertaEvasion() {
+void senalAlerta() {
+  // Parpadea LED 2 (Rojo/Alerta) con alarma intermitente en el Buzzer
   apagarTodo();
-  barreraServo.write(0);
-  for (int i = 0; i < 5; i++) {
-    digitalWrite(PIN_LED_ROJO, HIGH);
-    tone(PIN_BUZZER, 2400, 180);
-    delay(200);
-    digitalWrite(PIN_LED_ROJO, LOW);
-    tone(PIN_BUZZER, 1200, 150);
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(PIN_LED_ALERTA, HIGH);
+    tone(PIN_BUZZER, 2500, 160);
     delay(180);
+    digitalWrite(PIN_LED_ALERTA, LOW);
+    tone(PIN_BUZZER, 1200, 140);
+    delay(160);
   }
-  digitalWrite(PIN_LED_ROJO, HIGH);
-}
-
-void ejecutarAlertaSinSaldo() {
-  apagarTodo();
-  barreraServo.write(0);
-  digitalWrite(PIN_LED_ROJO, HIGH);
-  digitalWrite(PIN_LED_AMARILLO, HIGH);
-  for (int i = 0; i < 3; i++) {
-    tone(PIN_BUZZER, 1600, 220);
-    delay(300);
-  }
+  digitalWrite(PIN_LED_ALERTA, HIGH); // Queda encendido indicando alerta activa
 }
 
 void procesarComando(String linea) {
@@ -102,13 +79,11 @@ void procesarComando(String linea) {
   if (linea.length() == 0) return;
 
   if (linea.indexOf("FASE:INFERENCIA") >= 0 || linea.indexOf("FASE:IDENTIFICANDO") >= 0) {
-    ejecutarInferenciaActiva();
+    senalInferencia();
   } else if (linea.indexOf("FASE:PASO_OK") >= 0) {
-    ejecutarPasoAutorizado();
-  } else if (linea.indexOf("FASE:ALERTA_NO_REGISTRADA") >= 0) {
-    ejecutarAlertaEvasion();
-  } else if (linea.indexOf("FASE:ALERTA_SIN_SALDO") >= 0) {
-    ejecutarAlertaSinSaldo();
+    senalPasoAutorizado();
+  } else if (linea.indexOf("FASE:ALERTA") >= 0) {
+    senalAlerta();
   } else if (linea.indexOf("FASE:LISTO") >= 0) {
     apagarTodo();
   }
