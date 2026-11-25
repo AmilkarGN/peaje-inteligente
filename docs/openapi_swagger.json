@@ -1,0 +1,161 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "IAM-811 Sistema Inteligente de Control de Peaje — API REST",
+    "version": "1.0.0",
+    "description": "Exportación oficial de Swagger / OpenAPI 3.0 para el Laboratorio Final de Hito (IAM-811). Autor: Amilkar Hugo Guarachi Nina. Docente: Ing. Alvaro Pinto Mamani. Todas las rutas, excepto /api/v1/auth/google, exigen autenticación Bearer con Google OAuth 2.0."
+  },
+  "servers": [
+    {
+      "url": "https://peaje.tudominio.com",
+      "description": "Servidor de Producción en Subdominio HTTPS"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerGoogleAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerGoogleAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/google": {
+      "post": {
+        "summary": "Recibe el token de Google desde la app y devuelve el token de sesión del sistema",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": { "type": "string", "description": "Google ID Token o Access Token" },
+                  "email_google": { "type": "string", "example": "doc.alvaro.pinto.ma@unifranz.edu.bo" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Autenticación exitosa en lista blanca; devuelve token de sesión y rol" },
+          "403": { "description": "Acceso denegado: cuenta de Google no autorizada en lista blanca" }
+        }
+      }
+    },
+    "/api/v1/pasos/frame": {
+      "post": {
+        "summary": "Recibe un frame desde la app, llama a la inferencia (INFERENCE_URL), registra el paso y lo emite en tiempo real",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "caseta_id": { "type": "integer", "example": 1 },
+                  "imagen_base64": { "type": "string", "description": "Frame JPEG codificado en Base64" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Paso registrado, tarifa calculada y evento emitido en tiempo real (Pusher / SSE)" }
+        }
+      }
+    },
+    "/api/v1/placas/consultar": {
+      "post": {
+        "summary": "Consulta una placa por texto y devuelve su estado entre los 4 estados oficiales",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "placa": { "type": "string", "example": "29B110559" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Devuelve el estado oficial y sugerencias ante errores de OCR" }
+        }
+      }
+    },
+    "/api/v1/placas/consultar-imagen": {
+      "post": {
+        "summary": "Consulta una placa por imagen (M1 + OCR) y devuelve su estado",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imagen_base64": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Extrae la placa con M1 + OCR y devuelve su estado en el sistema" }
+        }
+      }
+    },
+    "/api/v1/placas/{placa}/historial": {
+      "get": {
+        "summary": "Historial de pasos de una placa",
+        "parameters": [
+          { "name": "placa", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista histórica de pasos con imagen de evidencia" }
+        }
+      }
+    },
+    "/api/v1/casetas/{id}/resumen": {
+      "get": {
+        "summary": "Conteo y recaudación del día",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Conteo diario, recaudación y desglose por categoría" }
+        }
+      }
+    },
+    "/api/v1/agente/chat": {
+      "post": {
+        "summary": "Mensaje al agente conversacional (por texto o imagen)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mensaje": { "type": "string", "example": "¿Cuál es el estado de la placa 298110559?" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Respuesta del agente conversacional con los 4 estados y sugerencias OCR" }
+        }
+      }
+    }
+  }
+}
