@@ -58,7 +58,7 @@ def _cargar_motor_inferencia_integrado():
         import main as motor_inf  # type: ignore
         _INFERENCIA_DIRECTA = motor_inf
     except Exception as exc_imp:
-        print(f'[motor-integrado] fallo import: {exc_imp!r}')
+        print(f'[motor-integrado] fallo import: {exc_imp!r}'); global _ERROR_IMPORT_MOTOR; _ERROR_IMPORT_MOTOR = repr(exc_imp)
         _INFERENCIA_DIRECTA = False
     return _INFERENCIA_DIRECTA
 
@@ -156,7 +156,7 @@ def _llamar_endpoint_inferencia(
         except Exception as e:
             raise RuntimeError(f"Error en inferencia ({error_remoto} / {e})") from e
 
-    raise RuntimeError(f"No se pudo conectar al endpoint de inferencia ({url_base}): {error_remoto}")
+    raise RuntimeError(f"No se pudo conectar al endpoint de inferencia ({url_base}): {error_remoto} | motor integrado no disponible: {_ERROR_IMPORT_MOTOR}")
 
 
 def _ResumenDashboard() -> Dict[str, Any]:
