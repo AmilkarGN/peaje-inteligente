@@ -480,13 +480,14 @@ def ejecutar_m2_y_m4_segmentacion(
 
     t_m2 = time.perf_counter()
 
-    # Si M2 es el modelo propio de 5 clases, reforzamos con el modelo YOLO-seg general para:
-    # 1) Detectar 'person' (M4 pasajeros)
-    # 2) Reforzar clases con pocas muestras en el dataset (como 'moto', 'camion', 'bus') durante video en vivo
+    # Si M2 es el modelo propio de 5 clases, reforzamos en ensemble con YOLO11s-seg (360° ángulos frontales/traseros/laterales) para:
+    # 1) Detectar 'person' (M4 pasajeros detrás del parabrisas/ventanas con imgsz=960 y conf=0.14)
+    # 2) Corregir falsos positivos de SUV/Jeep como 'camion' y estabilizar la categoría desde cualquier ángulo
     if coco_model is not None and (info_m2 is None or info_m2[0] != "yolo_seg"):
         res_coco = coco_model.predict(
             imagen_bgr,
-            conf=0.22,
+            conf=0.14,
+            imgsz=960,
             classes=[0, 2, 3, 5, 7],  # 0:person, 2:car, 3:motorcycle, 5:bus, 7:truck
             device=DEVICE,
             retina_masks=True,
@@ -504,17 +505,25 @@ def ejecutar_m2_y_m4_segmentacion(
                     mask = m_raw > 0.5
                 mask_u8 = mask.astype(np.uint8)
                 area_px = int(mask_u8.sum())
-                if area_px < 60:
+                if area_px < 45:
                     continue
                 nombre_coco = str(res_coco.names[c_id]).strip().lower()
                 if nombre_coco == "person":
                     pasajeros_masks.append({"conf": float(s), "box": b.tolist(), "mask": mask_u8})
-                elif nombre_coco in ("motorcycle", "bus", "truck") and s >= 0.45:
+                elif nombre_coco in ("car", "motorcycle", "bus", "truck") and s >= 0.35:
                     cat_coco = NORMALIZAR_CLASE.get(nombre_coco, "auto")
-                    # Si el modelo general detecta claramente moto, camión o bus con alta confianza, lo agregamos como candidato
+                    cat_coco = clasificar_minibus_heuristica(cat_coco, b.tolist(), imagen_bgr.shape)
+                    # Si nuestro M2 detectó el mismo vehículo como 'minibus' con buena confianza, respetamos 'minibus'
+                    for d_m2 in vehiculos_detectados:
+                        if d_m2["categoria"] == "minibus" and d_m2["confianza"] >= 0.42:
+                            ix1, iy1 = max(d_m2["box"][0], int(b[0])), max(d_m2["box"][1], int(b[1]))
+                            ix2, iy2 = min(d_m2["box"][2], int(b[2])), min(d_m2["box"][3], int(b[3]))
+                            if max(0, ix2 - ix1) * max(0, iy2 - iy1) > 0.4 * area_px:
+                                cat_coco = "minibus"
+                                break
                     vehiculos_detectados.append({
                         "categoria": cat_coco,
-                        "confianza": float(s) * 0.98,
+                        "confianza": float(s) * 1.05,
                         "box": [int(v) for v in b.tolist()],
                         "area_px": area_px,
                         "mask": mask_u8,
@@ -577,7 +586,7 @@ def ejecutar_m2_y_m4_segmentacion(
         }
     else:
         vehiculos_detectados.sort(
-            key=lambda d: d["area_px"] * d["confianza"] * (1.25 if d["categoria"] in ("moto", "camion", "bus", "minibus") else 1.0),
+            key=lambda d: d["area_px"] * d["confianza"],
             reverse=True,
         )
         principal = vehiculos_detectados[0]
@@ -590,9 +599,36 @@ def ejecutar_m2_y_m4_segmentacion(
     for p in pasajeros_masks:
         px1, py1, px2, py2 = p["box"]
         cx, cy = (px1 + px2) / 2.0, (py1 + py2) / 2.0
-        # Considerar personas cuyo centro horizontal cae dentro del ancho del vehículo y verticalmente cerca/dentro de la carrocería
-        if (vx1 - 0.08 * vw <= cx <= vx2 + 0.08 * vw) and (vy1 - 0.25 * vh <= cy <= vy2 + 0.05 * vh):
+        # Considerar personas cuyo centro horizontal cae dentro del vehículo y cuya área es menor que la del vehículo (no peatones enormes afuera)
+        p_area = max(1.0, (px2 - px1) * (py2 - py1))
+        if (vx1 + 0.04 * vw <= cx <= vx2 - 0.04 * vw) and (vy1 - 0.15 * vh <= cy <= vy2 - 0.10 * vh) and p_area < (vw * vh * 0.55):
             pasajeros_dentro.append(p)
+
+    # Si no se detectó pasajero en la imagen completa por reflejo del parabrisas, hacer zoom en la cabina superior del vehículo
+    if not pasajeros_dentro and coco_model is not None and vh >= 90 and vw >= 90:
+        cy1, cy2 = max(0, vy1), min(H, int(vy1 + vh * 0.65))
+        cx1, cx2 = max(0, int(vx1 + vw * 0.08)), min(W, int(vx2 - vw * 0.08))
+        recorte_cabina = imagen_bgr[cy1:cy2, cx1:cx2]
+        if recorte_cabina.shape[0] >= 40 and recorte_cabina.shape[1] >= 40:
+            # Mejorar contraste local en el parabrisas (CLAHE) para ver siluetas tras el vidrio
+            lab = cv2.cvtColor(recorte_cabina, cv2.COLOR_BGR2LAB)
+            l_ch, a_ch, b_ch = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(4, 4))
+            recorte_enh = cv2.cvtColor(cv2.merge((clahe.apply(l_ch), a_ch, b_ch)), cv2.COLOR_LAB2BGR)
+            res_cab = coco_model.predict(recorte_enh, conf=0.14, classes=[0], device=DEVICE, retina_masks=True, verbose=False)[0]
+            if res_cab.masks is not None and res_cab.boxes is not None:
+                ch, cw = recorte_cabina.shape[:2]
+                for m_raw, s, b in zip(res_cab.masks.data.cpu().numpy(), res_cab.boxes.conf.cpu().numpy(), res_cab.boxes.xyxy.cpu().numpy()):
+                    m_crop = (cv2.resize(m_raw.astype(np.float32), (cw, ch), interpolation=cv2.INTER_NEAREST) > 0.5).astype(np.uint8)
+                    if int(m_crop.sum()) < 35:
+                        continue
+                    mask_full = np.zeros((H, W), dtype=np.uint8)
+                    mask_full[cy1:cy2, cx1:cx2] = m_crop
+                    pasajeros_dentro.append({
+                        "conf": float(s),
+                        "box": [float(b[0] + cx1), float(b[1] + cy1), float(b[2] + cx1), float(b[3] + cy1)],
+                        "mask": mask_full,
+                    })
 
     conteo_pasajeros = len(pasajeros_dentro)
     t_fin = time.perf_counter()
@@ -675,18 +711,21 @@ def ejecutar_m3_keypoints_ejes(
     imagen_bgr: np.ndarray,
     box_vehiculo: List[int],
     categoria: str,
-    conf: float = 0.12,
+    conf: float = 0.35,
+    caja_placa: Optional[List[int]] = None,
 ) -> Dict[str, Any]:
     """
     Ejecuta el modelo YOLO-pose de 5 keypoints por llanta (`m3_ruedas_pose.pt`: 0=centro, 1=contacto, 2=superior, 3=izq, 4=der)
-    con imgsz=1024 y umbral bajo (0.12) más NMS de contención tal como en `keypoints_llantas_yolo_detectron2_v3.ipynb`.
+    con filtrado geométrico estricto para eliminar falsos positivos en faros, espejos, logos, placas o pavimento.
+    Si el vehículo se ve totalmente de frente o de espaldas (sin llantas laterales visibles), estima los ejes por categoría
+    sin dibujar círculos falsos sobre el parachoques.
     """
     t0 = time.perf_counter()
     modelo_m3 = get_m3_model()
     keypoints: List[Dict[str, float]] = []
 
     if modelo_m3 is not None:
-        umbral_llanta = min(conf, 0.12)
+        umbral_llanta = 0.36
         res = modelo_m3.predict(
             imagen_bgr,
             conf=umbral_llanta,
@@ -704,32 +743,47 @@ def ejecutar_m3_keypoints_ejes(
             boxes_xyxy = res.boxes.xyxy.cpu().numpy()
             confs_box = res.boxes.conf.cpu().numpy()
 
-            # Caso A: Modelo entrenado `m3_ruedas_pose.pt` (1 detección = 1 llanta con 5 keypoints)
             if kps_xy.shape[1] == 5 and len(boxes_xyxy) >= 1:
                 vx1, vy1, vx2, vy2 = box_vehiculo
                 vw, vh = max(10, vx2 - vx1), max(10, vy2 - vy1)
                 crudas = []
                 for b_llanta, s_llanta, pts5, c5 in zip(boxes_xyxy, confs_box, kps_xy, kps_conf):
+                    if float(s_llanta) < 0.36 or float(np.mean(c5)) < 0.35:
+                        continue
                     cx, cy = float(pts5[0][0]), float(pts5[0][1])
                     if cx <= 0 or cy <= 0:
                         cx = float((b_llanta[0] + b_llanta[2]) / 2)
                         cy = float((b_llanta[1] + b_llanta[3]) / 2)
-                    altura_llanta = max(8.0, abs(float(pts5[1][1] - pts5[2][1])), float(b_llanta[3] - b_llanta[1]))
-                    area_box = max(1.0, float((b_llanta[2] - b_llanta[0]) * (b_llanta[3] - b_llanta[1])))
-                    if (vx1 - 0.12 * vw <= cx <= vx2 + 0.12 * vw) and (vy1 + 0.22 * vh <= cy <= vy2 + 0.15 * vh):
-                        crudas.append({
-                            "x": int(cx),
-                            "y": int(cy),
-                            "radio": int(max(10, altura_llanta / 2)),
-                            "conf": round(float(s_llanta), 3),
-                            "box": [int(v) for v in b_llanta.tolist()],
-                            "kps5": [[int(px), int(py), round(float(pc), 3)] for (px, py), pc in zip(pts5, c5)],
-                            "altura": altura_llanta,
-                            "area": area_box,
-                        })
+                    bw_l = float(b_llanta[2] - b_llanta[0])
+                    bh_l = float(b_llanta[3] - b_llanta[1])
+                    aspect_l = bw_l / max(1.0, bh_l)
+                    # Una llanta real tiene proporción cercana a circular/ovalada y tamaño coherente con el vehículo
+                    if aspect_l < 0.42 or aspect_l > 1.85:
+                        continue
+                    altura_llanta = max(8.0, bh_l)
+                    if altura_llanta < 0.08 * vh or altura_llanta > 0.58 * vh:
+                        continue
+                    # Debe estar en la mitad inferior del vehículo y NO debajo del vehículo en el pavimento ni arriba en espejos/faros
+                    if not ((vx1 - 0.04 * vw <= cx <= vx2 + 0.04 * vw) and (vy1 + 0.42 * vh <= cy <= vy2 - 0.01 * vh)):
+                        continue
+                    # Nunca aceptar un falso positivo encima de la placa
+                    if caja_placa and len(caja_placa) == 4:
+                        px1, py1, px2, py2 = caja_placa
+                        if (px1 - 25 <= cx <= px2 + 25) and (py1 - 25 <= cy <= py2 + 25):
+                            continue
+                    area_box = max(1.0, bw_l * bh_l)
+                    crudas.append({
+                        "x": int(cx),
+                        "y": int(cy),
+                        "radio": int(max(10, min(altura_llanta, bw_l) / 2)),
+                        "conf": round(float(s_llanta), 3),
+                        "box": [int(v) for v in b_llanta.tolist()],
+                        "kps5": [[int(px), int(py), round(float(pc), 3)] for (px, py), pc in zip(pts5, c5)],
+                        "altura": altura_llanta,
+                        "area": area_box,
+                    })
 
-                # Limpiar llantas duplicadas o contenidas (aro dentro de llanta), igual que `limpiar_llantas` del docente
-                crudas.sort(key=lambda l: -l["area"])
+                crudas.sort(key=lambda l: -l["conf"])
                 limpias = []
                 for l in crudas:
                     es_dup = False
@@ -737,41 +791,23 @@ def ejecutar_m3_keypoints_ejes(
                         ix1, iy1 = max(l["box"][0], r["box"][0]), max(l["box"][1], r["box"][1])
                         ix2, iy2 = min(l["box"][2], r["box"][2]), min(l["box"][3], r["box"][3])
                         inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
-                        if (inter / l["area"]) >= 0.65 or abs(l["x"] - r["x"]) < max(14, r["radio"] * 0.7):
+                        if (inter / l["area"]) >= 0.45 or abs(l["x"] - r["x"]) < max(22, vw * 0.14):
                             es_dup = True
                             break
                     if not es_dup:
                         limpias.append(l)
 
                 if limpias:
-                    hmax = max(c["altura"] for c in limpias)
-                    filtradas = [c for c in limpias if c["altura"] >= 0.50 * hmax]
-
-                    # Eliminar "ruedas fantasma" de baja confianza cuando ya hay al menos 2 ruedas reales claras
-                    fuertes = [c for c in filtradas if c["conf"] >= 0.24]
-                    if len(fuertes) >= 2:
-                        filtradas = fuertes
-
-                    # Para auto, moto y minibús (vehículos de 2 ejes), conservar máximo las 2 ruedas de mayor confianza
-                    if categoria in ("auto", "moto", "minibus") and len(filtradas) > 2:
-                        filtradas.sort(key=lambda c: -c["conf"])
-                        filtradas = filtradas[:2]
-
-                    filtradas.sort(key=lambda c: c["x"])
-                    keypoints = filtradas
-            else:
-                for inst_xy, inst_c in zip(kps_xy, kps_conf):
-                    for (kx, ky), kc in zip(inst_xy, inst_c):
-                        if kx > 0 and ky > 0 and kc >= umbral_llanta:
-                            keypoints.append({
-                                "x": int(kx),
-                                "y": int(ky),
-                                "radio": 16,
-                                "conf": round(float(kc), 3),
-                            })
-
-    if len(keypoints) < 1:
-        keypoints = detectar_keypoints_ruedas_geometrico(imagen_bgr, box_vehiculo, categoria)
+                    # Alinear ruedas con la rueda más confiable (las ruedas de un vehículo están sobre una línea baja similar)
+                    mejor = limpias[0]
+                    alineadas = [
+                        c for c in limpias
+                        if abs(c["y"] - mejor["y"]) <= 0.22 * vh and 0.55 * mejor["altura"] <= c["altura"] <= 1.65 * mejor["altura"]
+                    ]
+                    if categoria in ("auto", "moto", "minibus") and len(alineadas) > 2:
+                        alineadas = alineadas[:2]
+                    alineadas.sort(key=lambda c: c["x"])
+                    keypoints = alineadas
 
     ancho_v = max(10, box_vehiculo[2] - box_vehiculo[0])
     ejes = agrupar_keypoints_en_ejes(keypoints, ancho_v, categoria)
@@ -900,6 +936,7 @@ def procesar_inferencia_unificada(
         box_vehiculo=res_m2_m4["vehiculo_principal"]["box"],
         categoria=res_m2_m4["categoria"],
         conf=umbral,
+        caja_placa=res_m1.get("caja_placa"),
     )
 
     imagen_anotada_b64 = None
