@@ -46,6 +46,33 @@ from .realtime import (
 # Importación diferida del motor local de inferencia (solo si INFERENCE_URL apunta al mismo contenedor cloud)
 _INFERENCIA_DIRECTA = None
 _ERROR_IMPORT_MOTOR = ""
+_ARCHIVO_URL_INFERENCIA = Path("/tmp/peaje_inference_url.txt") if os.name != "nt" else Path(settings.BASE_DIR) / "inference_url_runtime.txt"
+
+
+def _obtener_inference_url_activa() -> str:
+    try:
+        if _ARCHIVO_URL_INFERENCIA.exists():
+            u = _ARCHIVO_URL_INFERENCIA.read_text(encoding="utf-8").strip().rstrip("/")
+            if u.startswith("http://") or u.startswith("https://"):
+                settings.INFERENCE_URL = u
+                return u
+    except Exception:
+        pass
+    u_env = getattr(settings, "INFERENCE_URL", "").strip().rstrip("/")
+    if not u_env or "glad-blocked-cod-colon" in u_env:
+        u_env = "https://direction-submissions-dense-aquarium.trycloudflare.com"
+        settings.INFERENCE_URL = u_env
+    return u_env
+
+
+def _guardar_inference_url_activa(nueva_url: str) -> None:
+    u = nueva_url.strip().rstrip("/")
+    settings.INFERENCE_URL = u
+    os.environ["INFERENCE_URL"] = u
+    try:
+        _ARCHIVO_URL_INFERENCIA.write_text(u, encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _cargar_motor_inferencia_integrado():
@@ -103,7 +130,7 @@ def _llamar_endpoint_inferencia(
     La aplicación web no depende de dónde corre la inferencia: cambiar entre RunPod y Colab
     es solo cambiar la variable de entorno INFERENCE_URL.
     """
-    url_base = getattr(settings, "INFERENCE_URL", "").rstrip("/")
+    url_base = _obtener_inference_url_activa()
     ruta = "/infer/placa" if solo_placa else "/infer"
 
     if archivo_bytes and not imagen_base64:
@@ -822,10 +849,9 @@ def estado_inferencia_view(request):
         body = _parse_json_body(request)
         nueva_url = (body.get("inference_url") or "").strip().rstrip("/")
         if nueva_url.startswith("http://") or nueva_url.startswith("https://"):
-            settings.INFERENCE_URL = nueva_url
-            os.environ["INFERENCE_URL"] = nueva_url
+            _guardar_inference_url_activa(nueva_url)
 
-    url_base = settings.INFERENCE_URL
+    url_base = _obtener_inference_url_activa()
     t0 = time.perf_counter()
     remoto_ok = False
     detalle = {}

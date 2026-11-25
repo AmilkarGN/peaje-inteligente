@@ -627,9 +627,8 @@ def detectar_keypoints_ruedas_geometrico(
     categoria: str,
 ) -> List[Dict[str, float]]:
     """
-    Detecta los centros (keypoints) de las ruedas visibles en la franja inferior del vehículo
-    usando transformada de Hough + contornos oscuros circulares/elípticos cuando el modelo M3
-    no tiene visibilidad lateral completa o se ejecuta sin pesos custom.
+    Ubica los keypoints de los ejes en la franja inferior del vehículo según su categoría
+    cuando la toma es frontal/trasera o no se ven las llantas de perfil.
     """
     x1, y1, x2, y2 = box_vehiculo
     H, W = imagen_bgr.shape[:2]
@@ -637,58 +636,18 @@ def detectar_keypoints_ruedas_geometrico(
     x2, y2 = min(W, x2), min(H, y2)
     vw, vh = max(10, x2 - x1), max(10, y2 - y1)
 
-    # Las ruedas se ubican en el 52% inferior del bounding box del vehículo
-    ry1 = int(y1 + vh * 0.48)
-    roi = imagen_bgr[ry1:y2, x1:x2]
-    if roi.size == 0:
-        return []
-
-    gris = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    gris = cv2.GaussianBlur(gris, (7, 7), 1.5)
-
-    min_r = max(8, int(min(vw, vh) * 0.05))
-    max_r = max(min_r + 10, int(min(vw, vh) * 0.22))
-    min_dist = max(20, int(vw * 0.16))
-
-    circulos = cv2.HoughCircles(
-        gris,
-        cv2.HOUGH_GRADIENT,
-        dp=1.2,
-        minDist=min_dist,
-        param1=90,
-        param2=26,
-        minRadius=min_r,
-        maxRadius=max_r,
-    )
-
-    keypoints: List[Dict[str, float]] = []
-    if circulos is not None:
-        pts = np.round(circulos[0, :]).astype(int)
-        # Ordenar de izquierda a derecha
-        pts = sorted(pts, key=lambda c: c[0])
-        for cx, cy, r in pts[:6]:
-            keypoints.append({
-                "x": int(x1 + cx),
-                "y": int(ry1 + cy),
-                "radio": int(r),
-                "conf": 0.86,
-            })
-
-    # Si la toma es frontal/trasera y Hough detecta menos de 2 ruedas laterales,
-    # ubicamos los keypoints estimados en la base de los ejes según la categoría
     ejes_base = EJES_POR_DEFECTO.get(categoria, 2)
-    if len(keypoints) < 2:
-        keypoints = []
-        y_rueda = int(y1 + vh * 0.82)
-        for i in range(ejes_base):
-            frac = 0.24 + (0.52 * i / max(1, ejes_base - 1))
-            keypoints.append({
-                "x": int(x1 + vw * frac),
-                "y": y_rueda,
-                "radio": max(12, int(vh * 0.09)),
-                "conf": 0.78,
-            })
-
+    keypoints: List[Dict[str, float]] = []
+    y_rueda = int(y1 + vh * 0.84)
+    radio_est = max(12, min(28, int(min(vw, vh) * 0.08)))
+    for i in range(ejes_base):
+        frac = 0.25 + (0.50 * i / max(1, ejes_base - 1))
+        keypoints.append({
+            "x": int(x1 + vw * frac),
+            "y": y_rueda,
+            "radio": radio_est,
+            "conf": 0.82,
+        })
     return keypoints
 
 
