@@ -736,11 +736,11 @@ def ejecutar_m3_keypoints_ejes(
     keypoints: List[Dict[str, float]] = []
 
     if modelo_m3 is not None:
-        umbral_llanta = 0.36
+        umbral_llanta = 0.14
         res = modelo_m3.predict(
             imagen_bgr,
             conf=umbral_llanta,
-            imgsz=1024,
+            imgsz=640,
             device=DEVICE,
             verbose=False,
         )[0]
@@ -759,7 +759,7 @@ def ejecutar_m3_keypoints_ejes(
                 vw, vh = max(10, vx2 - vx1), max(10, vy2 - vy1)
                 crudas = []
                 for b_llanta, s_llanta, pts5, c5 in zip(boxes_xyxy, confs_box, kps_xy, kps_conf):
-                    if float(s_llanta) < 0.36 or float(np.mean(c5)) < 0.35:
+                    if float(s_llanta) < 0.14 or float(np.mean(c5)) < 0.18:
                         continue
                     cx, cy = float(pts5[0][0]), float(pts5[0][1])
                     if cx <= 0 or cy <= 0:
@@ -768,25 +768,25 @@ def ejecutar_m3_keypoints_ejes(
                     bw_l = float(b_llanta[2] - b_llanta[0])
                     bh_l = float(b_llanta[3] - b_llanta[1])
                     aspect_l = bw_l / max(1.0, bh_l)
-                    # Una llanta real tiene proporción cercana a circular/ovalada y tamaño coherente con el vehículo
-                    if aspect_l < 0.42 or aspect_l > 1.85:
+                    # En vista 3/4 la llanta es una elipse vertical (aspect_l ~ 0.18 a 0.45); de perfil es circular (~ 1.0)
+                    if aspect_l < 0.18 or aspect_l > 1.90:
                         continue
                     altura_llanta = max(8.0, bh_l)
-                    if altura_llanta < 0.11 * vh or altura_llanta > 0.55 * vh:
+                    if altura_llanta < 0.065 * vh or altura_llanta > 0.62 * vh:
                         continue
-                    # Debe estar en la mitad inferior del vehículo y NO debajo del vehículo en el pavimento ni arriba en espejos/faros
-                    if not ((vx1 - 0.02 * vw <= cx <= vx2 + 0.02 * vw) and (vy1 + 0.46 * vh <= cy <= vy2 - 0.01 * vh)):
+                    # Debe estar en la mitad inferior del vehículo y NO debajo del vehículo en el pavimento ni arriba en espejos
+                    if not ((vx1 - 0.03 * vw <= cx <= vx2 + 0.03 * vw) and (vy1 + 0.43 * vh <= cy <= vy2 - 0.005 * vh)):
                         continue
                     # Nunca aceptar un falso positivo encima de la placa
                     if caja_placa and len(caja_placa) == 4:
                         px1, py1, px2, py2 = caja_placa
-                        if (px1 - 25 <= cx <= px2 + 25) and (py1 - 25 <= cy <= py2 + 25):
+                        if (px1 - 20 <= cx <= px2 + 20) and (py1 - 20 <= cy <= py2 + 20):
                             continue
                     area_box = max(1.0, bw_l * bh_l)
                     crudas.append({
                         "x": int(cx),
                         "y": int(cy),
-                        "radio": int(max(10, min(altura_llanta, bw_l) / 2)),
+                        "radio": int(max(10, (altura_llanta * 0.72 + bw_l * 0.28) / 2)),
                         "conf": round(float(s_llanta), 3),
                         "box": [int(v) for v in b_llanta.tolist()],
                         "kps5": [[int(px), int(py), round(float(pc), 3)] for (px, py), pc in zip(pts5, c5)],
@@ -802,18 +802,18 @@ def ejecutar_m3_keypoints_ejes(
                         ix1, iy1 = max(l["box"][0], r["box"][0]), max(l["box"][1], r["box"][1])
                         ix2, iy2 = min(l["box"][2], r["box"][2]), min(l["box"][3], r["box"][3])
                         inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
-                        if (inter / l["area"]) >= 0.45 or abs(l["x"] - r["x"]) < max(22, vw * 0.14):
+                        if (inter / l["area"]) >= 0.45 or abs(l["x"] - r["x"]) < max(18, vw * 0.11):
                             es_dup = True
                             break
                     if not es_dup:
                         limpias.append(l)
 
                 if limpias:
-                    # Alinear ruedas con la rueda más confiable (las ruedas de un vehículo están sobre una línea baja similar)
+                    # En perspectiva 3/4 la rueda trasera se ve más arriba (hasta 0.38*vh) y más pequeña (hasta 0.32x) que la delantera
                     mejor = limpias[0]
                     alineadas = [
                         c for c in limpias
-                        if abs(c["y"] - mejor["y"]) <= 0.22 * vh and 0.55 * mejor["altura"] <= c["altura"] <= 1.65 * mejor["altura"]
+                        if abs(c["y"] - mejor["y"]) <= 0.38 * vh and 0.32 * mejor["altura"] <= c["altura"] <= 2.80 * mejor["altura"]
                     ]
                     if categoria in ("auto", "moto", "minibus") and len(alineadas) > 2:
                         alineadas = alineadas[:2]
