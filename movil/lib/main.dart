@@ -28,9 +28,9 @@ class PeajeInteligenteApp extends StatelessWidget {
       title: 'Peaje Inteligente IAM-811',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.light(useMaterial3: true).copyWith(
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        scaffoldBackgroundColor: const Color(0xFFF1F5F9),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB),
+          seedColor: const Color(0xFF1D4ED8),
           brightness: Brightness.light,
         ),
       ),
@@ -133,7 +133,6 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
     }
   }
 
-  /// Activa o detiene el envío continuo de frames de video a la API (2 a 5 fps)
   void _toggleCapturaContinua() {
     if (_capturaContinuaActiva) {
       _frameTimer?.cancel();
@@ -229,21 +228,24 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
+        surfaceTintColor: Colors.white,
         elevation: 1,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Peaje Inteligente IAM-811', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              'Peaje Inteligente IAM-811',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
             Text(
               '${_api.usuarioActual!['email_google']} · ROL: ${_api.usuarioActual!['rol'].toString().toUpperCase()}',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF2563EB)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF1D4ED8)),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            icon: const Icon(Icons.logout, color: Color(0xFFDC2626)),
             onPressed: () {
               _frameTimer?.cancel();
               setState(() {
@@ -257,11 +259,12 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
       ),
       body: _tabIndex == 0 ? _buildModoCaseta() : _buildModoConsulta(),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Colors.white,
         selectedIndex: _tabIndex,
         onDestinationSelected: (idx) => setState(() => _tabIndex = idx),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.videocam), label: 'Modo Caseta (2-5 fps)'),
-          NavigationDestination(icon: Icon(Icons.smart_toy), label: 'Modo Consulta (Agente)'),
+          NavigationDestination(icon: Icon(Icons.videocam_outlined), label: 'Modo Caseta (2-5 fps)'),
+          NavigationDestination(icon: Icon(Icons.chat_outlined), label: 'Modo Consulta (Agente)'),
         ],
       ),
     );
@@ -271,96 +274,110 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-        padding: const EdgeInsets.all(24),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+          padding: const EdgeInsets.all(20),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: const [
+                BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.verified_user_outlined, size: 48, color: Color(0xFF1D4ED8)),
+                const SizedBox(height: 12),
+                const Text(
+                  'Sistema Inteligente de Control de Peaje',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'IAM-811 · Amilkar Hugo Guarachi Nina',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: _urlCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Subdominio HTTPS del Backend Web',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.cloud_outlined),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (_errorLogin != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorLogin!,
+                            style: const TextStyle(color: Color(0xFF991B1B), fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.login),
+                    label: const Text('Iniciar Sesión con Google Sign-In'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D4ED8),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: _iniciarSesionConGoogleReal,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.person_outline, size: 18),
+                    onPressed: () => _iniciarSesionCuentaListaBlanca('guamilkar@gmail.com'),
+                    label: const Text('Admin: guamilkar@gmail.com'),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.school_outlined, size: 18),
+                    onPressed: () => _iniciarSesionCuentaListaBlanca('doc.alvaro.pinto.ma@unifranz.edu.bo'),
+                    label: const Text('Docente: doc.alvaro.pinto.ma@unifranz.edu.bo'),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.block, size: 16, color: Color(0xFFDC2626)),
+                    onPressed: () => _iniciarSesionCuentaListaBlanca('no.autorizado@gmail.com'),
+                    label: const Text(
+                      'Probar Cuenta No Autorizada (Rechazo 403)',
+                      style: TextStyle(color: Color(0xFFDC2626), fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.verified_user, size: 48, color: Color(0xFF2563EB)),
-              const SizedBox(height: 12),
-              const Text(
-                'Control Inteligente de Peaje',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              const Text(
-                'IAM-811 · Amilkar Hugo Guarachi Nina',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 18),
-              TextField(
-                controller: _urlCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Subdominio HTTPS del Backend Web',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.cloud_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_errorLogin != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFECACA)),
-                  ),
-                  child: Text(
-                    'Acceso Denegado: $_errorLogin',
-                    style: const TextStyle(color: Color(0xFF991B1B), fontSize: 12),
-                  ),
-                ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.login),
-                  label: const Text('Iniciar Sesión con Google Sign-In'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: _iniciarSesionConGoogleReal,
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.vpn_key_outlined, size: 18),
-                  onPressed: () => _iniciarSesionCuentaListaBlanca('guamilkar@gmail.com'),
-                  label: const Text('Google Auth: guamilkar@gmail.com (Admin)'),
-                ),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.school_outlined, size: 18),
-                  onPressed: () => _iniciarSesionCuentaListaBlanca('doc.alvaro.pinto.ma@unifranz.edu.bo'),
-                  label: const Text('Google Auth: doc.alvaro.pinto.ma@unifranz.edu.bo'),
-                ),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.block, size: 16, color: Color(0xFFDC2626)),
-                  onPressed: () => _iniciarSesionCuentaListaBlanca('no.autorizado@gmail.com'),
-                  label: const Text(
-                    'Probar Cuenta No Autorizada (Rechazo 403)',
-                    style: TextStyle(color: Color(0xFFDC2626), fontSize: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
         ),
       ),
     );
@@ -371,7 +388,6 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Selector de Caseta y Slider de FPS (2 a 5 fps)
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -415,15 +431,13 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-
-        // Vista previa de Cámara en Vivo
         Container(
           height: 250,
           decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _capturaContinuaActiva ? Colors.greenAccent : Colors.blueGrey,
+              color: _capturaContinuaActiva ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
               width: 2,
             ),
           ),
@@ -431,11 +445,13 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
           child: _cameraController != null && _cameraController!.value.isInitialized
               ? CameraPreview(_cameraController!)
               : const Center(
-                  child: Text('Cámara lista para capturar frames hacia /api/v1/pasos/frame'),
+                  child: Text(
+                    'Vista de cámara lista para enviar frames a /api/v1/pasos/frame',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ),
         ),
         const SizedBox(height: 12),
-
         Row(
           children: [
             Expanded(
@@ -443,9 +459,9 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
                 icon: Icon(_capturaContinuaActiva ? Icons.stop : Icons.videocam),
                 label: Text(_capturaContinuaActiva
                     ? 'Detener Stream (${_fps.toStringAsFixed(0)} FPS)'
-                    : 'Iniciar Captura Video (${_fps.toStringAsFixed(0)} FPS)'),
+                    : 'Iniciar Video (${_fps.toStringAsFixed(0)} FPS)'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _capturaContinuaActiva ? Colors.redAccent : Colors.green.shade700,
+                  backgroundColor: _capturaContinuaActiva ? const Color(0xFFDC2626) : const Color(0xFF1D4ED8),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -453,24 +469,22 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Capturar 1 Frame'),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('1 Frame'),
               onPressed: _capturarYEnviarFrame,
             ),
           ],
         ),
         const SizedBox(height: 16),
-
-        // Resultado de la Inferencia devuelto por la API (Placa, Categoría, Ejes, Pasajeros, Tarifa y Estado)
         if (res != null)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: res['estado'] == 'AUTORIZADO' ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                color: res['estado'] == 'AUTORIZADO' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
               ),
             ),
             child: Column(
@@ -481,30 +495,34 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
                   children: [
                     Text(
                       'PLACA: ${res['placa'] ?? 'ILEGIBLE'}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     Chip(
-                      label: Text('${res['estado']}'),
+                      label: Text(
+                        '${res['estado']}',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
                       backgroundColor: res['estado'] == 'AUTORIZADO'
-                          ? Colors.green.shade800
-                          : Colors.red.shade900,
+                          ? const Color(0xFF059669)
+                          : const Color(0xFFDC2626),
                     ),
                   ],
                 ),
                 const Divider(),
-                Text('• Categoría (M2 YOLO-seg): ${res['categoria'].toString().toUpperCase()}'),
-                Text('• Número de Ejes (M3 YOLO-pose): ${res['ejes']} ejes'),
-                Text('• Pasajeros Detectados (Bono M4): ${res['pasajeros']} ocupante(s)'),
+                Text('Categoría (M2 YOLO-seg): ${res['categoria'].toString().toUpperCase()}'),
+                Text('Número de Ejes (M3 YOLO-pose): ${res['ejes']} ejes'),
+                Text('Pasajeros Detectados (M4): ${res['pasajeros']} ocupante(s)'),
+                const SizedBox(height: 4),
                 Text(
-                  '• Tarifa Cobrada: Bs ${res['tarifa']}',
+                  'Tarifa Cobrada: Bs ${res['tarifa']}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.greenAccent,
+                    color: Color(0xFF059669),
                   ),
                 ),
-                Text('• Latencia en la Nube: ${res['latencia']} ms',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text('Latencia en la Nube: ${res['latencia']} ms',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
               ],
             ),
           ),
@@ -515,7 +533,6 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
   Widget _buildModoConsulta() {
     return Column(
       children: [
-        // Botones rápidos de los 4 estados para pruebas en móvil
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -557,8 +574,8 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
                   padding: const EdgeInsets.all(12),
                   constraints: const BoxConstraints(maxWidth: 320),
                   decoration: BoxDecoration(
-                    color: esUser ? const Color(0xFF2563EB) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    color: esUser ? const Color(0xFF1D4ED8) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
                     border: esUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Column(
@@ -585,11 +602,14 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
         ),
         Container(
           padding: const EdgeInsets.all(10),
-          color: Colors.white,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+          ),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
+                icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF1D4ED8)),
                 tooltip: 'Tomar foto de placa',
                 onPressed: () => _enviarFotoPlacaAlAgente(ImageSource.camera),
               ),
@@ -611,7 +631,7 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
               ),
               const SizedBox(width: 6),
               IconButton(
-                icon: const Icon(Icons.send, color: Colors.blueAccent),
+                icon: const Icon(Icons.send, color: Color(0xFF1D4ED8)),
                 onPressed: () => _enviarTextoAlAgente(_consultaTextoCtrl.text),
               ),
             ],
