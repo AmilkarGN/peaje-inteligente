@@ -259,17 +259,25 @@ def auth_google_view(request):
 
     # Validar estrictamente contra la lista blanca en la tabla `usuarios`
     usuario = Usuario.objects.filter(email_google__iexact=email).first()
-    if not usuario or not usuario.activo:
+    if not usuario:
         return JsonResponse(
             {
                 "ok": False,
                 "acceso_autorizado": False,
                 "error": "ACCESO_DENEGADO_LISTA_BLANCA",
                 "email_intentado": email,
-                "mensaje": (
-                    f"Acceso denegado: La cuenta de Google '{email}' no se encuentra "
-                    "autorizada en la lista blanca del sistema de control de peaje."
-                ),
+                "mensaje": "Acceso denegado. La cuenta de Google no se encuentra autorizada en la lista blanca.",
+            },
+            status=403,
+        )
+    if not usuario.activo:
+        return JsonResponse(
+            {
+                "ok": False,
+                "acceso_autorizado": False,
+                "error": "USUARIO_INACTIVO",
+                "email_intentado": email,
+                "mensaje": "Acceso denegado. El usuario se encuentra inactivo.",
             },
             status=403,
         )
@@ -809,10 +817,17 @@ def tarifas_casetas_usuarios_view(request):
             }
         )
 
-    if request.method == "POST":
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
         if request.usuario_actual.rol != "administrador":
             return JsonResponse({"ok": False, "mensaje": "Requiere rol administrador."}, status=403)
         body = _parse_json_body(request)
+        if request.method == "DELETE" or body.get("accion") == "eliminar":
+            uid = body.get("id")
+            u_del = Usuario.objects.filter(id=uid).first()
+            if not u_del:
+                return JsonResponse({"ok": False, "mensaje": "Usuario no encontrado."}, status=404)
+            u_del.delete()
+            return JsonResponse({"ok": True})
         tipo = body.get("tipo_entidad", "usuario")
         if tipo == "usuario":
             email = (body.get("email_google") or "").strip().lower()

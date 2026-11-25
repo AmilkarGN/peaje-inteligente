@@ -270,50 +270,83 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
     );
   }
 
+  Future<void> _mostrarModalContinuarConGoogle() async {
+    final emailCtrl = TextEditingController();
+    final email = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        title: const Text('Continuar con Google', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Correo de tu cuenta Google',
+            hintText: 'usuario@gmail.com',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, emailCtrl.text.trim()),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+    if (email != null && email.isNotEmpty) {
+      await _iniciarSesionCuentaListaBlanca(email);
+    }
+  }
+
   Widget _buildLoginScreen() {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: const [
-                BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 4)),
+                BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 6)),
               ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.verified_user_outlined, size: 48, color: Color(0xFF1D4ED8)),
-                const SizedBox(height: 12),
-                const Text(
-                  'Sistema Inteligente de Control de Peaje',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'IAM-811 · Amilkar Hugo Guarachi Nina',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 18),
-                TextField(
-                  controller: _urlCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Subdominio HTTPS del Backend Web',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.cloud_outlined),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB),
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  child: const Icon(Icons.verified_user_outlined, size: 30, color: Colors.white),
                 ),
                 const SizedBox(height: 16),
+                const Text(
+                  'Peaje Inteligente',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Sistema de Control y Monitoreo en Tiempo Real',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 20),
                 if (_errorLogin != null)
                   Container(
                     padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(12),
@@ -334,46 +367,34 @@ class _HomePeajeScreenState extends State<HomePeajeScreen> {
                   ),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.login),
-                    label: const Text('Iniciar Sesión con Google Sign-In'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1D4ED8),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: _iniciarSesionConGoogleReal,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
                   child: OutlinedButton.icon(
-                    icon: const Icon(Icons.person_outline, size: 18),
-                    onPressed: () => _iniciarSesionCuentaListaBlanca('guamilkar@gmail.com'),
-                    label: const Text('Admin: guamilkar@gmail.com'),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.school_outlined, size: 18),
-                    onPressed: () => _iniciarSesionCuentaListaBlanca('doc.alvaro.pinto.ma@unifranz.edu.bo'),
-                    label: const Text('Docente: doc.alvaro.pinto.ma@unifranz.edu.bo'),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.block, size: 16, color: Color(0xFFDC2626)),
-                    onPressed: () => _iniciarSesionCuentaListaBlanca('no.autorizado@gmail.com'),
+                    icon: const Icon(Icons.g_mobiledata, size: 28, color: Color(0xFF2563EB)),
                     label: const Text(
-                      'Probar Cuenta No Autorizada (Rechazo 403)',
-                      style: TextStyle(color: Color(0xFFDC2626), fontSize: 12),
+                      'Continuar con Google',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                     ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF8FAFC),
+                      side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: _mostrarModalContinuarConGoogle,
                   ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Acceso exclusivo mediante Google Sign-In para cuentas autorizadas en la lista blanca.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 20),
+                const Divider(color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 8),
+                const Text(
+                  'Sistema Inteligente de Control de Peaje • Exclusivo Google OAuth 2.0',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
