@@ -136,9 +136,9 @@ El APK instalable se genera en `movil/build/app/outputs/flutter-apk/app-release.
 
 ## 6. Enlaces Oficiales del Proyecto
 
-- **Aplicación Web en Producción (Subdominio HTTPS):** *(Colocar URL de tu subdominio al desplegar, ej. `https://peaje.tudominio.com`)*
-- **Documentación Interactiva Swagger / OpenAPI:** `https://peaje.tudominio.com/api/docs`
-- **Endpoint Unificado de Inferencia (`INFERENCE_URL`):** *(URL de RunPod / Colab en ejecución)*
-- **Dataset M2 (Segmentación de Vehículos en Roboflow):** *(Enlace público a tu proyecto de Roboflow M2)*
-- **Dataset M3 (Keypoints de Ruedas en Roboflow):** *(Enlace público a tu proyecto de Roboflow M3)*
-- **Carpeta en la Nube (Google Drive / OneDrive con Video, Informe PDF y APK):** *(Enlace a tu carpeta compartida con el docente)*
+- **Aplicación Web en Producción (Subdominio HTTPS):** *(Se actualizará al publicar el subdominio)*
+- **Documentación Interactiva Swagger / OpenAPI:** `/api/docs` ([docs/openapi_swagger.json](docs/openapi_swagger.json))
+- **Endpoint Unificado de Inferencia (`INFERENCE_URL`):** `https://glad-blocked-cod-colon.trycloudflare.com`
+- **Dataset M2 (Segmentación de Instancias de Vehículos en Roboflow):** https://app.roboflow.com/amilkars-workspace/peaje-vehiculos-seg-ordkq/1 (Universe: https://universe.roboflow.com/amilkars-workspace/peaje-vehiculos-seg-ordkq)
+- **Dataset M3 (Keypoints de Ruedas / Llantas en Roboflow):** https://app.roboflow.com/amilkars-workspace/peaje-ruedas-keypoints/1 (Imágenes: https://app.roboflow.com/amilkars-workspace/peaje-ruedas-keypoints/1/images)
+- **Dataset Base de Referencia (Minibuses La Paz):** https://universe.roboflow.com/transportesmart/minibuses-la-paz-benlc
